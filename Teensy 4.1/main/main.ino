@@ -12,6 +12,8 @@ typedef struct {
   int engine_revs;
   // the position of the damper extension in mm
   int damper_position;
+  // the gear number the car is currently in 
+  int gear_position;
   // the angular rotation of the steering wheel in degrees
   int steering_wheel_position;
   // the relative strain
@@ -62,6 +64,7 @@ void loop() {
   current_data->wheel_speed = GetWheelSpeed();
   current_data->engine_revs = GetEngineRevs();
   current_data->damper_position = GetDamperPosition();
+  current_data->gear_position = GetGearPosition();
   current_data->steering_wheel_position = GetSteeringWheelPosition();
   current_data->strain = GetStrain();
   current_data->gyro_x = GetGyroX();

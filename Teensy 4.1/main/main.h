@@ -1,6 +1,9 @@
+// Main functions
+
 int GetWheelSpeed();
 int GetEngineRevs();
 int GetDamperPosition();
+int GetGearPosition();
 int GetSteeringWheelPosition();
 int GetStrain();
 int GetGyroX();
