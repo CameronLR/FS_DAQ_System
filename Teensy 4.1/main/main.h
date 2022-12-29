@@ -6,8 +6,8 @@ int GetDamperPosition();
 int GetGearPosition();
 int GetSteeringWheelPosition();
 int GetStrain();
-int GetGyroX();
-int GetGyroY();
+int GetGyroX(); // Gyro info will have to be retrieved from Arduino Nano
+int GetGyroY(); // Alternatively a seperate gyro could be purchased
 int GetGyroZ();
 int GetVBat();
 int GetThrottlePosition();

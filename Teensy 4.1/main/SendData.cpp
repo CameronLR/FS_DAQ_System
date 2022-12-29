@@ -1,5 +1,5 @@
 #include "main.h"
-#include <Arduino.h>
+#include "Arduino.h"
 
 void SendData(){
     UploadToEEProm();
@@ -19,8 +19,8 @@ UploadToSDCard(){
 
 UploadToDataBase(){ 
     // code to non-destructively send the data to the DataBase
-    // This will first have to send the data to the Nano via the serial TX/RX 
-    // This is because only the Nano has WiFi capabilities
+    // this will first have to send the data to the Nano via the serial TX/RX 
+    // this is because only the Nano has WiFi capabilities
     // RTC time should also be sent to the database 
      
 }
