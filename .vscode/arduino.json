@@ -1,5 +1,0 @@
-{
-    "sketch": "Teensy 4.1/main/main.ino",
-    "configuration": "cpu=atmega328",
-    "board": "arduino:avr:nano"
-}
