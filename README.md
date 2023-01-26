@@ -1,6 +1,6 @@
 # FS_DAQ_System
 
-This is repo used for developing a DAQ system for University of Leed's formula student conbustion engine car
+This is a repo used for developing a DAQ system for the University of Leeds' Formula Student combustion engine car
 
 ## Project Overview
 
