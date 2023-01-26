@@ -1,0 +1,12 @@
+// This is a plantuml diagram of the seperate systems and their interactions
+
+@startuml
+
+Sensors -r-> [Teensy] : UART / SPI / I2C / ADC
+[Teensy] <-> [Nano] : SPI
+[Nano] -> [Server] : HTTPS
+[Server] -> Mechanic : HTTPS
+[Nano] -d-> [Display] : "  SPI"
+[Display] -> Driver
+
+@enduml
