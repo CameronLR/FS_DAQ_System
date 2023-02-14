@@ -6,7 +6,7 @@ Sensors -r-> [Teensy] : UART / SPI / I2C / ADC
 [Teensy] <-> [Nano] : SPI
 [Nano] -> [Server] : HTTPS
 [Server] -> Mechanic : HTTPS
-[Nano] -d-> [Display] : "  SPI"
+[Nano] -d-> [Display] : "UART"
 [Display] -> Driver
 
 @enduml
