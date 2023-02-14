@@ -14,5 +14,5 @@ The DAQ system is made of 5 seperate parts -
 
 ## System's Interface
 
-![image](https://user-images.githubusercontent.com/92472489/214916874-99c20909-0c7a-428d-9c0a-1c48708273e8.png)
+![image](https://www.plantuml.com/plantuml/png/SoWkIImgAStDuGfEpIlEBofMq2tIjLE83aa5SYjZ5QmKGXs3GXJq5O83F86afv4pa7HqSUQ2gx01AVTBpCi7AWQfue9oGCB1gKLbgKKW2O-Ga81WBgW0MD8tDJaZCIyp6IO9rvS2qkcIMLoGamXsW1B81KfS226Wl4jH9j0SBeVKl1IWsm40)
 
