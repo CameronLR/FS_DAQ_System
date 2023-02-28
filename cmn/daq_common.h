@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+typedef int32_t daq_WheelSpeed_t;
+typedef int32_t daq_EngineRev_t;
+typedef int32_t daq_DamperPos_t;
+typedef int32_t daq_GearPos_t;
+typedef int32_t daq_SteeringWhlPos_t;
+typedef int32_t daq_Strain_t;
+typedef int32_t daq_BatteryV_t;
+typedef int32_t daq_ThrottlePos_t;
+typedef int32_t daq_FuelPressure_t;
+
 typedef struct GyroData_s
 {
   int32_t x;
@@ -13,27 +23,27 @@ typedef struct GyroData_s
 typedef struct sensorData_s
 {
   // the wheel speed in MPH
-  int wheel_speed;
+  daq_WheelSpeed_t wheelSpeed_mph;
   // the engine revolutions in RPM
-  int engine_revs;
+  daq_EngineRev_t engineRev_rpm;
   // the position of the damper extension in mm
-  int damper_position;
+  daq_DamperPos_t damperPos_mm;
   // the gear number the car is currently in
-  int gear_position;
+  daq_GearPos_t gearPos;
   // the angular rotation of the steering wheel in degrees
-  int steering_wheel_position;
+  daq_SteeringWhlPos_t steeringWheelPos_degrees;
   // the relative strain
-  int strain;
+  daq_Strain_t strain;
   // gyro position in degrees
   GyroData_s gyro;
   // battery in deci-volts
-  int VBat;
+  daq_BatteryV_t batteryVoltage_dV;
   // throttle position in mm
-  int throttle_position;
+  daq_ThrottlePos_t throttlePos_mm;
   // fuel pressure in pascals?
-  int fuel_pressure;
+  daq_FuelPressure_t fuelPressure_pa;
   // program run time
-  unsigned long program_time_millis;
+  unsigned long time_ms;
 } sensorData_s;
 
 #endif
