@@ -11,12 +11,11 @@
 #include <Arduino.h>
 #include "gpio.h"
 
-static daq_WheelSpeed_t gpio_getWheelSpeed();
+static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
-static daq_DamperPos_t gpio_getDamperPosition();
+static DamperPos_S gpio_getDamperPosition();
 static daq_GearPos_t gpio_getGearPosition();
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition();
-static daq_Strain_t gpio_getStrain();
 static GyroData_s gpio_getGyro();
 static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
@@ -29,7 +28,6 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->damperPos_mm = gpio_getDamperPosition();
     pSensorData->gearPos = gpio_getGearPosition();
     pSensorData->steeringWheelPos_degrees = gpio_getSteeringWheelPosition();
-    pSensorData->strain = gpio_getStrain();
     pSensorData->gyro = gpio_getGyro();
     pSensorData->batteryVoltage_dV = gpio_getVBat();
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
@@ -38,9 +36,10 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     return false;
 }
 
-static daq_WheelSpeed_t gpio_getWheelSpeed()
+static WheelSpeed_s gpio_getWheelSpeed()
 {
-    return 0;
+    WheelSpeed_s wheelSpeed = {};
+    return wheelSpeed;
 }
 
 static daq_EngineRev_t gpio_getEngineRevs()
@@ -48,9 +47,10 @@ static daq_EngineRev_t gpio_getEngineRevs()
     return 0U;
 }
 
-static daq_DamperPos_t gpio_getDamperPosition()
+static DamperPos_S gpio_getDamperPosition()
 {
-    return 0;
+    DamperPos_S damperPos = {};
+    return damperPos;
 }
 
 static daq_GearPos_t gpio_getGearPosition()
@@ -59,11 +59,6 @@ static daq_GearPos_t gpio_getGearPosition()
 }
 
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
-{
-    return 0;
-}
-
-static daq_Strain_t gpio_getStrain()
 {
     return 0;
 }

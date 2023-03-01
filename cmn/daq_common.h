@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 
-typedef int32_t daq_WheelSpeed_t;
 typedef int32_t daq_EngineRev_t;
 typedef int32_t daq_DamperPos_t;
 typedef int32_t daq_GearPos_t;
@@ -13,6 +12,21 @@ typedef int32_t daq_BatteryV_t;
 typedef int32_t daq_ThrottlePos_t;
 typedef int32_t daq_FuelPressure_t;
 
+typedef struct WheelSpeed_s
+{
+  int32_t fr; // Front Right
+  int32_t fl; // Front Left
+  int32_t rr; // Rear Right
+  int32_t rl; // Rear Left
+} WheelSpeed_s;
+
+typedef struct DamperPos_S
+{
+  int32_t fr; // Front Right
+  int32_t fl; // Front Left
+  int32_t rr; // Rear Right
+  int32_t rl; // Rear Left
+} DamperPos_S;
 typedef struct GyroData_s
 {
   int32_t x;
@@ -23,17 +37,15 @@ typedef struct GyroData_s
 typedef struct sensorData_s
 {
   // the wheel speed in MPH
-  daq_WheelSpeed_t wheelSpeed_mph;
+  WheelSpeed_s wheelSpeed_mph;
   // the engine revolutions in RPM
   daq_EngineRev_t engineRev_rpm;
   // the position of the damper extension in mm
-  daq_DamperPos_t damperPos_mm;
+  DamperPos_S damperPos_mm;
   // the gear number the car is currently in
   daq_GearPos_t gearPos;
   // the angular rotation of the steering wheel in degrees
   daq_SteeringWhlPos_t steeringWheelPos_degrees;
-  // the relative strain
-  daq_Strain_t strain;
   // gyro position in degrees
   GyroData_s gyro;
   // battery in deci-volts
