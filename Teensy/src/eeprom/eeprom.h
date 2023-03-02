@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-extern uint32_t eeprom_readGearPosition();
-extern void eeprom_writeGearPosition(uint32_t gearPos);
+extern daq_GearPos_t eeprom_readGearPosition();
+extern void eeprom_writeGearPosition(daq_GearPos_t gearPos);
 
 #endif

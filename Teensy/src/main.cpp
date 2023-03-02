@@ -9,17 +9,22 @@
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
-#include "daq_common.h"
-#include "gpio/gpio.h"
-#include "sdCard/sdCard.h"
-#include "tni/tni.h"
-#include "eeprom/eeprom.h"
+
+#include <cmn/daq_common.h>
+#include <gpio/gpio.h>
+#include <sdCard/sdCard.h>
+#include <tni/tni.h>
+#include <eeprom/eeprom.h>
 
 sensorData_s dataStruct = {};
 
 static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTime_ms);
 
+#ifdef UNIT_TEST
+void hidden_setup()
+#else
 void setup()
+#endif
 {
   Serial.begin(115200);
   setSyncProvider(RTC.get); // the function to get the time from the RTC
@@ -33,10 +38,14 @@ void setup()
     Serial.println("RTC has set the system time");
   }
 
-  dataStruct.gear_position = eeprom_readGearPosition();
+  dataStruct.gearPos = eeprom_readGearPosition();
 }
 
+#ifdef UNIT_TEST
+void hidden_loop()
+#else
 void loop()
+#endif
 {
   bool error = updateSensorInfo(&dataStruct);
 
@@ -56,7 +65,7 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTim
   }
   else
   {
-    eeprom_writeGearPosition(pSensorData->gear_position);
+    eeprom_writeGearPosition(pSensorData->gearPos);
     sendDataToNano(pSensorData);
     sendDataToSdCard(pSensorData);
   }
