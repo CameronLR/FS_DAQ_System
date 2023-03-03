@@ -29,11 +29,11 @@ void test_eeprom_gearPos()
     TEST_ASSERT_EQUAL(test_gearPos, eeprom_readGearPosition());
 }
 
-void test_testing()
+void test_eeprom_gearPos_bad()
 {
-    TEST_ASSERT_TRUE(true);
-
-    TEST_ASSERT_TRUE(false);
+    daq_GearPos_t test_gearPos = 254U;
+    eeprom_writeGearPosition(test_gearPos);
+    TEST_ASSERT_EQUAL(test_gearPos - 1, eeprom_readGearPosition());
 }
 
 void setup()
