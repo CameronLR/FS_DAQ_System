@@ -43,7 +43,7 @@ void setup()
     UNITY_BEGIN();
 
     RUN_TEST(test_eeprom_gearPos);
-    RUN_TEST(test_eeprom_gearPos);
+    RUN_TEST(test_testing);
 
     UNITY_END();
 }
