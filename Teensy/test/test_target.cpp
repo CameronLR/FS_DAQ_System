@@ -1,4 +1,9 @@
-// EEPROM test procedure to test EEPROM functionality on Teensy4.1 HW
+/**
+ * @file
+ * @brief Teensy Hardware Tests
+ *
+ * Set of hardwares tests to be run on target (Teensy 4.1)
+ */
 
 #if !defined(UNIT_TEST)
 #    error "This file must only be compiled in when in test mode"
