@@ -29,13 +29,6 @@ void test_eeprom_gearPos()
     TEST_ASSERT_EQUAL(test_gearPos, eeprom_readGearPosition());
 }
 
-void test_eeprom_gearPos_bad()
-{
-    daq_GearPos_t test_gearPos = 254U;
-    eeprom_writeGearPosition(test_gearPos);
-    TEST_ASSERT_EQUAL(test_gearPos - 1, eeprom_readGearPosition());
-}
-
 void setup()
 {
     delay(2000);
@@ -43,7 +36,6 @@ void setup()
     UNITY_BEGIN();
 
     RUN_TEST(test_eeprom_gearPos);
-    RUN_TEST(test_testing);
 
     UNITY_END();
 }

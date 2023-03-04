@@ -2,7 +2,9 @@
  * @file
  * @brief EEPROM handling functions
  *
- * Detailed description, etc.
+ * Read write functions for specific data stored in EEPROM
+ * Current data stored in EEPROM:
+ *      - Gear Positiom
  */
 
 #include <Arduino.h>
@@ -19,6 +21,10 @@ typedef enum eepromDataAddr
     EXAMPLE_NEXT_ADDR = EEPROM_START_ADDR + GEAR_POS_LEN
 } eepromDataAddr;
 
+/********************************************************************************
+    @brief  Reads Gear Position Value stored in EEPROM
+    @return  EEPROM's Gear Position
+*********************************************************************************/
 daq_GearPos_t eeprom_readGearPosition()
 {
     daq_GearPos_t gearPos = 0U;
@@ -28,9 +34,11 @@ daq_GearPos_t eeprom_readGearPosition()
     return gearPos;
 }
 
+/********************************************************************************
+    @brief  Writes Gear Position Value stored in EEPROM
+    @param  gearPos : Gear Position to write to eeprom
+*********************************************************************************/
 void eeprom_writeGearPosition(daq_GearPos_t gearPos)
 {
     EEPROM.put(GEAR_POS_ADDR, gearPos);
-
-    return;
 }
