@@ -40,13 +40,7 @@ void setup()
     Serial.println("RTC has set the system time");
   }
 
-  Serial.print("Initializing SD card...");
-
-  if (!SD.begin(chipSelect)) {
-    Serial.println("Initialization failed!");
-    return;
-  }
-  Serial.println("Initialization SD card done.");
+  sdCard_init();
 }
 
 void loop() 
