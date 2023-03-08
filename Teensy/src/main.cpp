@@ -23,6 +23,9 @@ void setup()
   Serial.begin(115200);
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
+  // This it the interrupt to help read the rev counter, pin A9 
+  attachInterrupt(digitalPinToInterrupt(23), gpio_revTickerInterrupt, RISING);
+
   if (timeStatus() != timeSet)
   {
     Serial.println("Unable to sync with the RTC");
@@ -57,3 +60,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTim
     sendDataToSdCard(pSensorData);
   }
 }
+
+
+
