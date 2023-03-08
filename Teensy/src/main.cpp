@@ -25,9 +25,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTim
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial) {
-    ; //wait for the serial to connect
-  }
 
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
@@ -64,6 +61,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTim
   else
   {
     sendDataToNano(pSensorData);
-    sendDataToSdCard(pSensorData);
+    sdCard_appendLine(pSensorData);
   }
 }
