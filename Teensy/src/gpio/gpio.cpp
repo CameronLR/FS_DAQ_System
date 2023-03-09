@@ -12,7 +12,7 @@
 #include "gpio.h"
 
 static WheelSpeed_s gpio_getWheelSpeed();
-static daq_EngineRev_t gpio_getEngineRevs();
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms);
 static DamperPos_S gpio_getDamperPosition();
 static daq_GearPos_t gpio_getGearPosition();
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition();
@@ -21,10 +21,14 @@ static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
 static daq_FuelPressure_t gpio_getFuelPressure();
 
-bool updateSensorInfo(sensorData_s *pSensorData)
+unsigned int timeOfLastRev;
+static int engineRev
+
+    bool
+    updateSensorInfo(sensorData_s *pSensorData)
 {
     pSensorData->wheelSpeed_mph = gpio_getWheelSpeed();
-    pSensorData->engineRev_rpm = gpio_getEngineRevs();
+    pSensorData->engineRev_rpm = gpio_getEngineRevs(pSensorData->time_ms);
     pSensorData->damperPos_mm = gpio_getDamperPosition();
     pSensorData->gearPos = gpio_getGearPosition();
     pSensorData->steeringWheelPos_degrees = gpio_getSteeringWheelPosition();
@@ -42,9 +46,9 @@ static WheelSpeed_s gpio_getWheelSpeed()
     return wheelSpeed;
 }
 
-static daq_EngineRev_t gpio_getEngineRevs()
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms)
 {
-    return 0U;
+    return engineRev;
 }
 
 static DamperPos_S gpio_getDamperPosition()
@@ -83,4 +87,15 @@ static daq_ThrottlePos_t gpio_getThrottlePosition()
 static daq_FuelPressure_t gpio_getFuelPressure()
 {
     return 0U;
+}
+
+
+
+static void gpio_revTickerInterrupt(int revCount){
+
+    int currentTime = micros();
+
+    engineRev = (int)(1.0 / (float)(((float)currentTime/1000000.0) - ((float)timeOfLastRev/1000000.0)));
+
+    timeOfLastRev = currentTime;
 }
