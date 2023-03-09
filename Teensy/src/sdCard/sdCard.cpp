@@ -17,70 +17,9 @@
 
 #define FILENAME_LEN 40
 
-File dataFile;
 static char gFilename[FILENAME_LEN];
 
 const int chipSelect = BUILTIN_SDCARD;
-
-bool sdCard_appendLine(sensorData_s *pSensorData)
-{
-  /**
-   * \param[in] pSensorData pointer to sensor data to append to csv file
-   * \return result - true if write was successful, else false
-   * \details
-   *      function recives a pointer to sensordata, it opens the File on the sd card 
-   *      that will have been created in the initialsation function. Then prints to the file
-   *      on the sd card and closes it. 
-   *      Also prints errors to the Serial if they occour.
-   */
-
-
-  dataFile = SD.open(gFilename, FILE_WRITE);
-  if (!dataFile) {
-    //if the file couldn't be opend => print error message
-    Serial.print("Error oppening the file : ");
-    Serial.println(gFilename);
-    return false;
-
-  }
-
-  Serial.print("Writing to ");
-  Serial.println(gFilename);
-  
-  //if there was no problem opening the file => write to it
-  dataFile.print(String(pSensorData->wheelSpeed_mph.fr) + ",");
-  dataFile.print(String(pSensorData->wheelSpeed_mph.fl) + ",");
-  dataFile.print(String(pSensorData->wheelSpeed_mph.rr) + ",");
-  dataFile.print(String(pSensorData->wheelSpeed_mph.rl) + ",");
-
-  dataFile.print(String(pSensorData->engineRev_rpm) + ",");
-
-  dataFile.print(String(pSensorData->damperPos_mm.fr) + ",");
-  dataFile.print(String(pSensorData->damperPos_mm.fl) + ",");
-  dataFile.print(String(pSensorData->damperPos_mm.rr) + ",");
-  dataFile.print(String(pSensorData->damperPos_mm.rl) + ",");
-
-  dataFile.print(String(pSensorData->gearPos) + ",");
-
-  dataFile.print(String(pSensorData->steeringWheelPos_degrees) + ",");
-
-  dataFile.print(String(pSensorData->gyro.x) + ",");
-  dataFile.print(String(pSensorData->gyro.y) + ",");
-  dataFile.print(String(pSensorData->gyro.z) + ",");
-
-  dataFile.print(String(pSensorData->batteryVoltage_dV) + ",");
-
-  dataFile.print(String(pSensorData->throttlePos_mm) + ",");
-
-  dataFile.print(String(pSensorData->fuelPressure_pa) + ",");
-
-  dataFile.println(String(pSensorData->time_ms) + ",");
-
-  dataFile.close();
-
-  return true;
-}
-
 
 bool sdCard_init() 
 {
@@ -95,22 +34,22 @@ bool sdCard_init()
    */
 
 
-  //Get the time to use for a timestamp
+  // Formats csv file's name with current time
   snprintf (gFilename, FILENAME_LEN, "FS_DAQ_Log_%d-%d-%d_%d:%d:%d.csv\0", year(), month(), day(), hour(), minute(), second());
 
-  Serial.println("Initializing SD card...");
+  Serial.println("Initializing SDCARD ...");
 
   if (!SD.begin(chipSelect)) {
-    Serial.println("Initialization failed!");
+    Serial.println("ERROR: Unable to connect to SDCARD");
     return false;
   }
-  Serial.println("Initialization SD card done.");
+  Serial.println("SDCARD initialisation successful");
 
-  dataFile = SD.open(gFilename, FILE_WRITE);
+  File dataFile = SD.open(gFilename, FILE_WRITE);
   if (!dataFile) {
 
     //if the file couldn't be opend => print error message 
-    Serial.print("Error oppening the file : ");
+    Serial.print("ERROR: could not open file: ");
     Serial.println(gFilename);
     return false;
 
@@ -150,5 +89,67 @@ bool sdCard_init()
 
   dataFile.close();
 
+  Serial.println("FS_DAQ_Log initialised successfully");
+
   return true;
 }
+
+
+
+bool sdCard_appendLine(sensorData_s *pSensorData)
+{
+  /**
+   * \param[in] pSensorData pointer to sensor data to append to csv file
+   * \return result - true if write was successful, else false
+   * \details
+   *      function recives a pointer to sensordata, it opens the File on the sd card 
+   *      that will have been created in the initialsation function. Then prints to the file
+   *      on the sd card and closes it. 
+   *      Also prints errors to the Serial if they occour.
+   */
+
+
+  File dataFile = SD.open(gFilename, FILE_WRITE);
+  if (!dataFile) {
+    //if the file couldn't be opend => print error message
+    Serial.print("ERROR: could not open file: ");
+    Serial.println(gFilename);
+    return false;
+
+  }
+  
+  //if there was no problem opening the file => write to it
+  dataFile.print(String(pSensorData->wheelSpeed_mph.fr) + ",");
+  dataFile.print(String(pSensorData->wheelSpeed_mph.fl) + ",");
+  dataFile.print(String(pSensorData->wheelSpeed_mph.rr) + ",");
+  dataFile.print(String(pSensorData->wheelSpeed_mph.rl) + ",");
+
+  dataFile.print(String(pSensorData->engineRev_rpm) + ",");
+
+  dataFile.print(String(pSensorData->damperPos_mm.fr) + ",");
+  dataFile.print(String(pSensorData->damperPos_mm.fl) + ",");
+  dataFile.print(String(pSensorData->damperPos_mm.rr) + ",");
+  dataFile.print(String(pSensorData->damperPos_mm.rl) + ",");
+
+  dataFile.print(String(pSensorData->gearPos) + ",");
+
+  dataFile.print(String(pSensorData->steeringWheelPos_degrees) + ",");
+
+  dataFile.print(String(pSensorData->gyro.x) + ",");
+  dataFile.print(String(pSensorData->gyro.y) + ",");
+  dataFile.print(String(pSensorData->gyro.z) + ",");
+
+  dataFile.print(String(pSensorData->batteryVoltage_dV) + ",");
+
+  dataFile.print(String(pSensorData->throttlePos_mm) + ",");
+
+  dataFile.print(String(pSensorData->fuelPressure_pa) + ",");
+
+  dataFile.println(String(pSensorData->time_ms) + ",");
+
+  dataFile.close();
+
+  return true;
+}
+
+

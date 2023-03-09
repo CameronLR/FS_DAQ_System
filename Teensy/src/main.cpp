@@ -8,15 +8,11 @@
 #include <Arduino.h>
 #include <TimeLib.h>
 #include <DS1307RTC.h>
-#include <SD.h>
-#include <SPI.h>
 
 #include "../../cmn/daq_common.h"
 #include "gpio/gpio.h"
 #include "sdCard/sdCard.h"
 #include "tni/tni.h"
-
-const int chipSelect = BUILTIN_SDCARD;
 
 sensorData_s dataStruct = {};
 
