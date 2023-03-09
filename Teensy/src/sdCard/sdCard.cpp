@@ -35,7 +35,7 @@ bool sdCard_init()
 
 
   // Formats csv file's name with current time
-  snprintf (gFilename, FILENAME_LEN, "FS_DAQ_Log_%d-%d-%d_%d:%d:%d.csv\0", year(), month(), day(), hour(), minute(), second());
+  snprintf (gFilename, FILENAME_LEN, "FS_DAQ_Log_%d-%d-%d_%d:%d:%d.csv", year(), month(), day(), hour(), minute(), second());
 
   Serial.println("Initializing SDCARD ...");
 
