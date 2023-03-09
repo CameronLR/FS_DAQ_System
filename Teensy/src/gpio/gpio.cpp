@@ -12,7 +12,7 @@
 #include "gpio.h"
 
 static WheelSpeed_s gpio_getWheelSpeed();
-static daq_EngineRev_t gpio_getEngineRevs();
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms);
 static DamperPos_S gpio_getDamperPosition();
 static daq_GearPos_t gpio_getGearPosition();
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition();
@@ -28,7 +28,7 @@ static int engineRev
     updateSensorInfo(sensorData_s *pSensorData)
 {
     pSensorData->wheelSpeed_mph = gpio_getWheelSpeed();
-    pSensorData->engineRev_rpm = gpio_getEngineRevs();
+    pSensorData->engineRev_rpm = gpio_getEngineRevs(pSensorData->time_ms);
     pSensorData->damperPos_mm = gpio_getDamperPosition();
     pSensorData->gearPos = gpio_getGearPosition();
     pSensorData->steeringWheelPos_degrees = gpio_getSteeringWheelPosition();
@@ -46,7 +46,7 @@ static WheelSpeed_s gpio_getWheelSpeed()
     return wheelSpeed;
 }
 
-static daq_EngineRev_t gpio_getEngineRevs()
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms)
 {
     return engineRev;
 }
