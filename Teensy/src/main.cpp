@@ -9,7 +9,7 @@
 #include <TimeLib.h>
 #include <DS1307RTC.h>
 
-#include "../../cmn/daq_common.h"
+#include "cmn/daq_common.h"
 #include "gpio/gpio.h"
 #include "sdCard/sdCard.h"
 #include "tni/tni.h"
