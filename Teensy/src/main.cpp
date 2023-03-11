@@ -36,19 +36,21 @@ void setup()
   sdCard_init();
 }
 
-void loop() 
+void loop()
 {
   bool error = updateSensorInfo(&dataStruct);
-  
-  uint32_t currentTime_ms = millis();
+
+  dataStruct.time_ms = millis();
 
   if (!error)
   {
     sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
   }
+
+  delay(500)
 }
 
-static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTime_ms)
+static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
 {
   if (NULL == pSensorData)
   {
