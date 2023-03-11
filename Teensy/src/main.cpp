@@ -16,7 +16,7 @@
 
 sensorData_s dataStruct = {};
 
-static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTime_ms);
+static void sendUpdatedSensorInfo(sensorData_s *pSensorData);
 
 void setup()
 {
@@ -44,10 +44,10 @@ void loop()
 
   if (!error)
   {
-    sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
+    sendUpdatedSensorInfo(&dataStruct);
   }
 
-  delay(500)
+  delay(500);
 }
 
 static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
