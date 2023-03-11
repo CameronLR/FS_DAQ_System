@@ -19,9 +19,9 @@
 
 static char gFilename[FILENAME_LEN];
 
-bool gSdCardError = False
+bool gSdCardError = false;
 
-    const int chipSelect = BUILTIN_SDCARD;
+const int chipSelect = BUILTIN_SDCARD;
 
 bool sdCard_init()
 {
@@ -154,5 +154,5 @@ bool sdCard_appendLine(sensorData_s *pSensorData)
     dataFile.close();
   }
 
-  return true;
+  return gSdCardError;
 }
