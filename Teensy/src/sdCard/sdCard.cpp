@@ -16,7 +16,6 @@
 #include "sdCard.h"
 
 #define FILENAME_LEN 40
-
 static char gFilename[FILENAME_LEN];
 
 bool gSdCardError = false;
@@ -50,8 +49,6 @@ bool sdCard_init()
   File dataFile = SD.open(gFilename, FILE_WRITE);
   if (!dataFile)
   {
-
-    // if the file couldn't be opend => print error message
     Serial.print("ERROR: could not open file: ");
     Serial.println(gFilename);
     return false;
@@ -60,7 +57,7 @@ bool sdCard_init()
   Serial.print("Writing to: ");
   Serial.println(gFilename);
 
-  // Print the data to the file
+  // Set-up file with data headers
   dataFile.print("Wheel Speed FR (mph),");
   dataFile.print("Wheel Speed FL (mph),");
   dataFile.print("Wheel Speed RR (mph),");
