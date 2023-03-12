@@ -16,11 +16,12 @@
 
 sensorData_s dataStruct = {};
 
-static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTime_ms);
+static void sendUpdatedSensorInfo(sensorData_s *pSensorData);
 
 void setup()
 {
   Serial.begin(115200);
+
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
   if (timeStatus() != timeSet)
@@ -31,21 +32,25 @@ void setup()
   {
     Serial.println("RTC has set the system time");
   }
+
+  sdCard_init();
 }
 
 void loop()
 {
   bool error = updateSensorInfo(&dataStruct);
 
-  uint32_t currentTime_ms = millis();
+  dataStruct.time_ms = millis();
 
   if (!error)
   {
-    sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
+    sendUpdatedSensorInfo(&dataStruct);
   }
+
+  delay(500);
 }
 
-static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTime_ms)
+static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
 {
   if (NULL == pSensorData)
   {
@@ -54,6 +59,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData, uint32_t currentTim
   else
   {
     sendDataToNano(pSensorData);
-    sendDataToSdCard(pSensorData);
+    sdCard_appendLine(pSensorData);
   }
 }
