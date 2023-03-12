@@ -81,7 +81,7 @@ bool sdCard_init()
   dataFile.print("Gryo Y Position (Degrees),");
   dataFile.print("Gryo Z Position (Degrees),");
 
-  dataFile.print("Battery Voltage (dV)");
+  dataFile.print("Battery Voltage (dV),");
 
   dataFile.print("Throttle Position (mm),");
 
