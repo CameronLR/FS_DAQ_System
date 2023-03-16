@@ -1,0 +1,33 @@
+@startuml
+
+
+node "Qt Application" {
+  component GUI{
+    component [Graphs]
+    component [START/STOP BTN]
+}
+  [Qt Listener] -> [Graphs]
+
+  [START/STOP BTN] -> [Qt Signaler]
+  
+ [Qt Signaler] -[Hidden]-> [Qt Listener]
+ [START/STOP BTN] -[Hidden]-> [Graphs]
+
+}
+
+node "Data Retreival" {
+  [Data Collection] --> [Data Processing]
+  [Data Processing] --> [Data Collection]
+  [Data Processing] --> [Data Publisher]
+  [Data Publisher] --> [Qt Listener] : "DAQ Data"
+  [Qt Signaler] --> [Signal Listener] : "START/STOP command"
+  [Signal Listener] -r-> [Data Processing]
+  
+}
+
+[Data Collection] -> Serial_Port 
+Serial_Port -> [Data Collection]
+
+
+
+@enduml
