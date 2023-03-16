@@ -42,10 +42,12 @@ class DataCollectorThread(QtCore.QThread):
         self.status = Status.STOPPED
 
         try:
-            self.serial = serial.Serial('COM6', 1152000, timeout=1)
+            self.serial = serial.Serial('COM5', 115200, timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None
+        else:
+            self.serial.close()
 
     def run(self):
         while (1):
@@ -55,9 +57,7 @@ class DataCollectorThread(QtCore.QThread):
                 time.sleep(0.5)
             else:
                 print("STATUS = RUNNING")
-                time.sleep(0.5)
                 self.run_running()
-                print("Serial Empty")
                 # do some stuff here
 
     @QtCore.Slot(int)
@@ -72,21 +72,21 @@ class DataCollectorThread(QtCore.QThread):
             print("Starting Data Collector")
             # Open Serial Port
             if self.serial != None:
+                print("Opening serial!")
                 self.serial.open()
+                self.serial.flush()
+
         else:
             print("ERROR: Invalid status")
             self.status = Status.STOPPED
 
     def run_running(self):
-        serial_data = "1,2,3,4"
-
-        data = DAQ_Dataclass(serial_data.split(","))
-
-        self.data_signal.emit(data)
+        serial_data = "a"
 
         while serial_data != None:
             if self.serial != None:
                 serial_data = self.serial.readline()
+                serial_data = serial_data.decode("utf-8")
 
             crc_error = self.run_crc(serial_data)
 
@@ -100,12 +100,13 @@ class DataCollectorThread(QtCore.QThread):
         return False
 
     def extract_data(self, serial_data):
-        serial_data.split(",")
+        serial_list = serial_data.split(",")
+        print()
 
-        if len(serial_data) != MAX_PARAMETERS + 1:
+        if len(serial_list) != MAX_PARAMETERS + 1:
             return None
         else:
-            return DAQ_Dataclass(serial_data)
+            return DAQ_Dataclass(serial_list)
 
     def serial_listener():
         pass

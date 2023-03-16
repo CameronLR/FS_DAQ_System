@@ -46,6 +46,8 @@ class Gui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Gui, self).__init__()
 
+        self.start_time_s = time.time()
+
         self.data_collection_thread = DataCollectorThread(self)
         self.status_signal.connect(
             self.data_collection_thread.status_signal_slot)
@@ -57,23 +59,34 @@ class Gui(QtWidgets.QMainWindow):
 
         self.setWindowTitle(f"FS DAQ Monitoring - {__VERSION__}")
 
-        x = np.linspace(-50, 50, 1000)
-        y = np.sin(x) / x
+        # x = np.linspace(-50, 50, 1000)
+        # y = np.sin(x) / x
+
+        self.speed_data = [[], []]
+
+        x = 0
+        y = 0
+
+        self.graph_plots = []
 
         self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
 
-        self.graphs = []
+        last_graph = None
 
         for i in range(0, DataGraphs.END):
-            self.graphs.append(self.graph_widget.addPlot(x=x, y=y))
-            self.graphs[i].setLabel('left', GRAPH_Y_AXIS_LABEL[i])
+
+            graph = pyqtgraph.PlotItem()
+            plot = graph.plot([0], [0])
+
+            self.graph_plots.append([graph, plot])
+
+            graph.setLabel('left', GRAPH_Y_AXIS_LABEL[i])
             if i != 0:
-                self.graphs[i].setXLink(self.graphs[i-1])
-
+                graph.setXLink(self.graph_plots[i-1][0])
             if i != DataGraphs.END - 1:
-                self.graphs[i].getAxis('bottom').setTicks([])
+                graph.getAxis('bottom').setTicks([])
 
-            self.graph_widget.nextRow()
+            self.graph_widget.addItem(graph, row=i, col=0)
 
         self.graph_widget.setBackground('w')
 
@@ -108,6 +121,12 @@ class Gui(QtWidgets.QMainWindow):
         print(f"SPEED = {data.speed_fr}")
         print(f"SPEED = {data.speed_rl}")
         print(f"SPEED = {data.speed_rr}")
+
+        self.speed_data[0].append(int(data.speed_fl))
+        self.speed_data[1].append(int(time.time() - self.start_time_s))
+
+        self.graph_plots[0][1].setData(
+            x=self.speed_data[1], y=self.speed_data[0])
 
     def init_gui(self):
         pass
