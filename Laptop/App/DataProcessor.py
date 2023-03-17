@@ -7,7 +7,7 @@ import serial
 from enum import Enum
 from dataclasses import dataclass
 
-COM_PORT = "com6"
+COM_PORT = 'COM10'
 
 
 class Status(int, Enum):
@@ -42,7 +42,7 @@ class DataCollectorThread(QtCore.QThread):
         self.status = Status.STOPPED
 
         try:
-            self.serial = serial.Serial('COM5', 115200, timeout=1)
+            self.serial = serial.Serial(COM_PORT, 115200, timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None

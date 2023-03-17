@@ -3,6 +3,7 @@ import time
 import numpy as np
 
 from PySide6 import QtCore, QtWidgets
+from PySide6.QtWidgets import QGridLayout
 from PySide6.QtGui import QAction
 import pyqtgraph
 
@@ -11,7 +12,6 @@ from DataProcessor import DataCollectorThread, Status, DAQ_Dataclass
 from enum import Enum
 
 __VERSION__ = "v1.0"
-
 
 class DataGraphs(int, Enum):
     SPEED = 0
@@ -47,7 +47,27 @@ class Gui(QtWidgets.QMainWindow):
         super(Gui, self).__init__()
 
         self.start_time_s = time.time()
+        self.speed_data = [[], []]
 
+        self.init_threads()
+
+        self.setWindowTitle(f"FS DAQ Monitoring - {__VERSION__}")
+        
+        self.init_tool_bar()
+
+        self.init_graph_widget()
+        self.init_live_widget()
+
+        self.tab_widget = QtWidgets.QTabWidget()
+
+        self.tab_widget.addTab(self.graph_widget, "Graph View")
+        self.tab_widget.addTab(self.live_widget, "Live View")
+
+        self.setCentralWidget(self.tab_widget)
+
+        self.showMaximized()
+
+    def init_threads(self):
         self.data_collection_thread = DataCollectorThread(self)
         self.status_signal.connect(
             self.data_collection_thread.status_signal_slot)
@@ -55,23 +75,10 @@ class Gui(QtWidgets.QMainWindow):
             self.received_data)
         self.data_collection_thread.start()
 
-        self.init_tool_bar()
-
-        self.setWindowTitle(f"FS DAQ Monitoring - {__VERSION__}")
-
-        # x = np.linspace(-50, 50, 1000)
-        # y = np.sin(x) / x
-
-        self.speed_data = [[], []]
-
-        x = 0
-        y = 0
-
+    def init_graph_widget(self):
         self.graph_plots = []
 
         self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
-
-        last_graph = None
 
         for i in range(0, DataGraphs.END):
 
@@ -90,9 +97,46 @@ class Gui(QtWidgets.QMainWindow):
 
         self.graph_widget.setBackground('w')
 
-        self.setCentralWidget(self.graph_widget)
+        
+    def init_live_widget(self):
 
-        self.showMaximized()
+        self.live_widget = QtWidgets.QWidget()
+
+        self.live_objects = [[],[]]
+
+        for i in range(0, DataGraphs.END):
+
+            self.live_objects[0].append(QtWidgets.QVBoxLayout())
+
+            object_label = QtWidgets.QLabel(GRAPH_Y_AXIS_LABEL[i])
+            self.live_objects[1].append(QtWidgets.QLabel("0"))
+
+            self.live_objects[0][i].addWidget(object_label)
+            self.live_objects[0][i].addWidget(self.live_objects[1][i])
+
+        hLayout_1 = QtWidgets.QHBoxLayout()
+        hLayout_2 = QtWidgets.QHBoxLayout()
+        hLayout_3 = QtWidgets.QHBoxLayout()
+
+        hLayout_1.addLayout(self.live_objects[0][0])
+        hLayout_1.addLayout(self.live_objects[0][1])
+        hLayout_1.addLayout(self.live_objects[0][2])
+    
+        hLayout_2.addLayout(self.live_objects[0][3])
+        hLayout_2.addLayout(self.live_objects[0][4])
+        hLayout_2.addLayout(self.live_objects[0][5])
+        
+        hLayout_3.addLayout(self.live_objects[0][6])
+        hLayout_3.addLayout(self.live_objects[0][7])
+        hLayout_3.addLayout(self.live_objects[0][8])
+
+        vLayout = QtWidgets.QVBoxLayout()
+        vLayout.addLayout(hLayout_1)
+        vLayout.addLayout(hLayout_2)
+        vLayout.addLayout(hLayout_3)
+            
+        self.live_widget.setLayout(vLayout)
+
 
     def init_tool_bar(self):
         tool_bar = QtWidgets.QToolBar()
@@ -125,8 +169,11 @@ class Gui(QtWidgets.QMainWindow):
         self.speed_data[0].append(int(data.speed_fl))
         self.speed_data[1].append(int(time.time() - self.start_time_s))
 
-        self.graph_plots[0][1].setData(
-            x=self.speed_data[1], y=self.speed_data[0])
+        if self.tab_widget.currentIndex() == 0:
+            self.graph_plots[0][1].setData(
+                x=self.speed_data[1], y=self.speed_data[0])
+        else:
+            self.live_objects[1][1].setText(str(self.speed_data[0][-1]))
 
     def init_gui(self):
         pass
