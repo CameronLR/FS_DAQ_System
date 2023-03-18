@@ -7,7 +7,7 @@ import serial
 from enum import Enum
 from dataclasses import dataclass
 
-COM_PORT = 'COM10'
+COM_PORT = 'COM5'
 
 
 class Status(int, Enum):
@@ -83,10 +83,9 @@ class DataCollectorThread(QtCore.QThread):
     def run_running(self):
         serial_data = "a"
 
-        while serial_data != None:
-            if self.serial != None:
-                serial_data = self.serial.readline()
-                serial_data = serial_data.decode("utf-8")
+        while serial_data != None and self.serial != None and self.serial.is_open != False and self.serial._overlapped_read != None:
+            serial_data = self.serial.readline()
+            serial_data = serial_data.decode("utf-8")
 
             crc_error = self.run_crc(serial_data)
 
