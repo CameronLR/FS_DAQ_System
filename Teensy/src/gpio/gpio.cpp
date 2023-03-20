@@ -11,6 +11,9 @@
 #include <Arduino.h>
 #include "gpio.h"
 
+#define GEAR_SHIFT_UP_PIN 2
+#define GEAR_SHIFT_DOWN_PIN 3
+
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
 static DamperPos_S gpio_getDamperPosition();
@@ -55,7 +58,34 @@ static DamperPos_S gpio_getDamperPosition()
 
 static daq_GearPos_t gpio_getGearPosition()
 {
-    return 0;
+    /**
+    * \return result - returns the int value of gear position
+    * \details
+    *         Gear 1, is when the car is fully shifted down
+    *         Neutral, is one shift up from gear 1
+    *         Gear 2, is a shift up from neutral
+    *         Gear 3, is a shift up from gear 2
+    *         
+    *         Max gear = 6.
+    */
+
+
+    daq_GearPos_t gearPosition = 0;
+    int up_shift_state = digitalRead(GEAR_SHIFT_DOWN_PIN);
+    int down_shift_state = digitalRead(GEAR_SHIFT_UP_PIN);
+
+    const int max_gear = 6;
+    const int min_gear = 0;
+
+    if (up_shift_state == HIGH) {
+        gearPosition = (gearPosition + 1 > max_gear) ? max_gear : gearPosition + 1;
+    }
+
+    if (down_shift_state == HIGH) {
+        gearPosition = (gearPosition - 1 < min_gear) ? min_gear : gearPosition - 1;
+    }
+
+    return gearPosition;
 }
 
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
@@ -83,4 +113,12 @@ static daq_ThrottlePos_t gpio_getThrottlePosition()
 static daq_FuelPressure_t gpio_getFuelPressure()
 {
     return 0U;
+}
+
+void gpio_init()
+{
+    //Initializing the pins for the hall effect sensors
+    pinMode(GEAR_SHIFT_UP_PIN, INPUT);
+    pinMode(GEAR_SHIFT_DOWN_PIN, INPUT);
+
 }

@@ -5,6 +5,8 @@
  * Detailed description, etc.
  */
 
+
+
 #include <Arduino.h>
 #include <TimeLib.h>
 #include <DS1307RTC.h>
@@ -12,6 +14,7 @@
 #include "cmn/daq_common.h"
 #include "gpio/gpio.h"
 #include "sdCard/sdCard.h"
+#include "eeprom/eeprom.h"
 #include "tni/tni.h"
 
 sensorData_s dataStruct = {};
@@ -23,6 +26,8 @@ void setup()
   Serial.begin(115200);
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
+  gpio_init();
+
   if (timeStatus() != timeSet)
   {
     Serial.println("Unable to sync with the RTC");
@@ -31,6 +36,9 @@ void setup()
   {
     Serial.println("RTC has set the system time");
   }
+
+  dataStruct.gearPos = eeprom_readGearPosition();
+
 }
 
 void loop()
