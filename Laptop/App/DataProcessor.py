@@ -26,12 +26,38 @@ class DAQ_Dataclass():
     speed_fl: int
     speed_rr: int
     speed_rl: int
+    engine_rev: int
+    damper_fr: int
+    damper_fl: int
+    damper_rr: int
+    damper_rl: int
+    gear: int
+    steering_whl_pos: int
+    gyro_x: int
+    gyro_y: int
+    gyro_z: int
+    b_voltage: int
+    throttle: int
+    fuel_pressure: int
 
     def __init__(self, data_list):
         self.speed_fr = data_list[0]
         self.speed_fl = data_list[1]
         self.speed_rr = data_list[2]
         self.speed_rl = data_list[3]
+        self.engine_rev = data_list[4]
+        self.damper_fr = data_list[5]
+        self.damper_fl = data_list[6]
+        self.damper_rr = data_list[7]
+        self.damper_rl = data_list[8]
+        self.gear = data_list[9]
+        self.steering_whl_pos = data_list[10]
+        self.gyro_x = data_list[11]
+        self.gyro_y = data_list[12]
+        self.gyro_z = data_list[13]
+        self.b_voltage = data_list[14]
+        self.throttle = data_list[15]
+        self.fuel_pressure = data_list[16]
 
 
 class DataCollectorThread(QtCore.QThread):
