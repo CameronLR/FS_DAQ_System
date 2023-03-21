@@ -2,7 +2,6 @@ import sys
 import time
 
 from PySide6 import QtCore, QtWidgets, QtGui
-from PySide6.QtWidgets import QGridLayout
 from PySide6.QtGui import QAction
 import pyqtgraph
 
