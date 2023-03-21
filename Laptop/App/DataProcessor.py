@@ -15,53 +15,30 @@ class Status(int, Enum):
     STOPPED = 2
 
 
-MAX_PARAMETERS = 4
-
-GRAPH_Y_AXIS_LABEL = [0 for i in range(MAX_PARAMETERS)]
-
-
-@dataclass
-class DAQ_Dataclass():
-    speed_fr: int
-    speed_fl: int
-    speed_rr: int
-    speed_rl: int
-    engine_rev: int
-    damper_fr: int
-    damper_fl: int
-    damper_rr: int
-    damper_rl: int
-    gear: int
-    steering_whl_pos: int
-    gyro_x: int
-    gyro_y: int
-    gyro_z: int
-    b_voltage: int
-    throttle: int
-    fuel_pressure: int
-
-    def __init__(self, data_list):
-        self.speed_fr = data_list[0]
-        self.speed_fl = data_list[1]
-        self.speed_rr = data_list[2]
-        self.speed_rl = data_list[3]
-        self.engine_rev = data_list[4]
-        self.damper_fr = data_list[5]
-        self.damper_fl = data_list[6]
-        self.damper_rr = data_list[7]
-        self.damper_rl = data_list[8]
-        self.gear = data_list[9]
-        self.steering_whl_pos = data_list[10]
-        self.gyro_x = data_list[11]
-        self.gyro_y = data_list[12]
-        self.gyro_z = data_list[13]
-        self.b_voltage = data_list[14]
-        self.throttle = data_list[15]
-        self.fuel_pressure = data_list[16]
+class DAQ_DataPoints(int, Enum):
+    WHL_SPEED_FR = 0
+    WHL_SPEED_FL = 1
+    WHL_SPEED_RR = 2
+    WHL_SPEED_RL = 3
+    ENGINE_REVS = 4
+    DAMPER_POS_FR = 5
+    DAMPER_POS_FL = 6
+    DAMPER_POS_RR = 7
+    DAMPER_POS_RL = 8
+    GEAR_POS = 9
+    STR_WHL_POS = 10
+    GYRO_X = 11
+    GYRO_Y = 12
+    GYRO_Z = 13
+    BAT_VOLT = 14
+    THROTTLE = 15
+    FUEL_PRESSURE = 16
+    TIME = 17
+    END = 18
 
 
 class DataCollectorThread(QtCore.QThread):
-    data_signal = QtCore.Signal(DAQ_Dataclass)
+    data_signal = QtCore.Signal(object)
 
     def __init__(self, parent):
         super(DataCollectorThread, self).__init__(parent=parent)
@@ -119,6 +96,7 @@ class DataCollectorThread(QtCore.QThread):
                 data = self.extract_data(serial_data)
 
                 if data != None:
+                    print("Sending data")
                     self.data_signal.emit(data)
 
     def run_crc(self, serial_data):
@@ -128,10 +106,14 @@ class DataCollectorThread(QtCore.QThread):
         serial_list = serial_data.split(",")
         print()
 
-        if len(serial_list) != MAX_PARAMETERS + 1:
+        if len(serial_list) != DAQ_DataPoints.END + 1:
+            print("ERROR: Invalid number of parameters")
             return None
         else:
-            return DAQ_Dataclass(serial_list)
+            list = []
+            for i in range(len(serial_list)-1):
+                list.append(int(serial_list[i]))
+            return list
 
     def serial_listener():
         pass

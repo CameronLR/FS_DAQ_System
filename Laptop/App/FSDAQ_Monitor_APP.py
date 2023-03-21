@@ -5,7 +5,8 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtGui import QAction
 import pyqtgraph
 
-from DataProcessor import DataCollectorThread, Status, DAQ_Dataclass
+import DataProcessor
+from DataProcessor import DataCollectorThread, Status, DAQ_DataPoints
 
 from enum import Enum
 
@@ -45,8 +46,7 @@ class Gui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Gui, self).__init__()
 
-        self.start_time_s = time.time()
-        self.speed_data = [[], []]
+        self.data = [[] for i in range(DAQ_DataPoints.END)]
 
         self.init_threads()
 
@@ -149,24 +149,60 @@ class Gui(QtWidgets.QMainWindow):
         print("Stopping monitoring")
         self.status_signal.emit(Status.STOPPED)
 
-    @QtCore.Slot(DAQ_Dataclass)
-    def received_data(self, data: DAQ_Dataclass):
+    @QtCore.Slot(object)
+    def received_data(self, input_data):
         print("Received some data")
-        print(f"SPEED = {data.speed_fl}")
-        print(f"SPEED = {data.speed_fr}")
-        print(f"SPEED = {data.speed_rl}")
-        print(f"SPEED = {data.speed_rr}")
 
-        self.speed_data[0].append(int(data.speed_fl))
-        self.speed_data[1].append(int(time.time() - self.start_time_s))
+        for i in range(DAQ_DataPoints.END):
+            self.data[i].append(input_data[i])
+
+        print(
+            f"SPEED = {self.data[DAQ_DataPoints.WHL_SPEED_FL]} \nTIME = {self.data[DAQ_DataPoints.TIME]}")
 
         if self.tab_widget.currentIndex() == 0:
-            for i in range(0, DataGraphs.END):
-                self.graph_plots[i][1].setData(
-                    x=self.speed_data[1], y=self.speed_data[0])
+            self.update_graphs()
         else:
-            for i in range(0, DataGraphs.END):
-                self.live_objects[i].update_value(self.speed_data[0][-1])
+            self.update_live()
+
+    def update_graphs(self):
+        self.graph_plots[DataGraphs.SPEED][1].setData(
+            y=self.data[DAQ_DataPoints.WHL_SPEED_FR], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.REVS][1].setData(
+            y=self.data[DAQ_DataPoints.ENGINE_REVS], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.DAMPERS][1].setData(
+            y=self.data[DAQ_DataPoints.DAMPER_POS_FR], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.GEAR][1].setData(
+            y=self.data[DAQ_DataPoints.GEAR_POS], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.WHEEL][1].setData(
+            y=self.data[DAQ_DataPoints.STR_WHL_POS], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.GYRO][1].setData(
+            y=self.data[DAQ_DataPoints.GYRO_X], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.VOLTAGE][1].setData(
+            y=self.data[DAQ_DataPoints.BAT_VOLT], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.THROTTLE][1].setData(
+            y=self.data[DAQ_DataPoints.THROTTLE], x=self.data[DAQ_DataPoints.TIME])
+        self.graph_plots[DataGraphs.FUEL][1].setData(
+            y=self.data[DAQ_DataPoints.FUEL_PRESSURE], x=self.data[DAQ_DataPoints.TIME])
+
+    def update_live(self):
+        self.live_objects[DataGraphs.SPEED].update_value(
+            self.data[DAQ_DataPoints.WHL_SPEED_FR][-1])
+        self.live_objects[DataGraphs.REVS].update_value(
+            self.data[DAQ_DataPoints.ENGINE_REVS][-1])
+        self.live_objects[DataGraphs.DAMPERS].update_value(
+            self.data[DAQ_DataPoints.DAMPER_POS_FR][-1])
+        self.live_objects[DataGraphs.GEAR].update_value(
+            self.data[DAQ_DataPoints.GEAR_POS][-1])
+        self.live_objects[DataGraphs.WHEEL].update_value(
+            self.data[DAQ_DataPoints.STR_WHL_POS][-1])
+        self.live_objects[DataGraphs.GYRO].update_value(
+            self.data[DAQ_DataPoints.GYRO_X][-1])
+        self.live_objects[DataGraphs.VOLTAGE].update_value(
+            self.data[DAQ_DataPoints.BAT_VOLT][-1])
+        self.live_objects[DataGraphs.THROTTLE].update_value(
+            self.data[DAQ_DataPoints.THROTTLE][-1])
+        self.live_objects[DataGraphs.FUEL].update_value(
+            self.data[DAQ_DataPoints.FUEL_PRESSURE][-1])
 
     def init_gui(self):
         pass
