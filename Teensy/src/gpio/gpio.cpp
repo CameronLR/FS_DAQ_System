@@ -11,7 +11,7 @@
 #include <Arduino.h>
 #include "gpio.h"
 
-#define REV_SENSOR_PIN 23;
+#define REV_SENSOR_PIN 23
 
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms);
@@ -23,13 +23,16 @@ static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
 static daq_FuelPressure_t gpio_getFuelPressure();
 
+static void gpio_engineRevInterrupt();
+
+
 volatile unsigned int revCount;
 
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
-  attachInterrupt(digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
+  attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
   revCount = 0;
 
 }
@@ -64,7 +67,9 @@ static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
 
     uint32_t rpm = (int)((1.0 / timePerRev) * 60.0);
 
-    return gEngineRev;
+    revCount = 0;
+
+    return rpm;
 }
 
 static DamperPos_S gpio_getDamperPosition()
