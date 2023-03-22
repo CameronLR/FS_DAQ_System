@@ -4,5 +4,6 @@
 #include "cmn/daq_common.h"
 
 extern bool updateSensorInfo(sensorData_s *pSensorData);
+extern void gpio_init();
 
 #endif

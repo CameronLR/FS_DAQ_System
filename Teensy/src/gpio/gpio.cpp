@@ -11,6 +11,8 @@
 #include <Arduino.h>
 #include "gpio.h"
 
+#define REV_SENSOR_PIN 23;
+
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms);
 static DamperPos_S gpio_getDamperPosition();
@@ -21,11 +23,20 @@ static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
 static daq_FuelPressure_t gpio_getFuelPressure();
 
-unsigned int timeOfLastRev;
-static int engineRev
+volatile unsigned int timeOfLastRev;
+volatile unsigned int timeOfCurrentRev;
+static int gEngineRev
 
-    bool
-    updateSensorInfo(sensorData_s *pSensorData)
+    void
+    gpio_init()
+{
+  // This it the interrupt to help read the rev counter, pin A9 
+  attachInterrupt(digitalPinToInterrupt(REV_SENSOR_PIN), gpio_revTickerInterrupt, RISING);
+}
+
+
+
+bool updateSensorInfo(sensorData_s *pSensorData)
 {
     pSensorData->wheelSpeed_mph = gpio_getWheelSpeed();
     pSensorData->engineRev_rpm = gpio_getEngineRevs(pSensorData->time_ms);
@@ -48,6 +59,8 @@ static WheelSpeed_s gpio_getWheelSpeed()
 
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms)
 {
+    gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0))) );
+ 
     return engineRev;
 }
 
@@ -92,10 +105,7 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 
 
 static void gpio_revTickerInterrupt(int revCount){
+    timeOfLastRev = timeOfCurrentRev;
 
-    int currentTime = micros();
-
-    engineRev = (int)(1.0 / (float)(((float)currentTime/1000000.0) - ((float)timeOfLastRev/1000000.0)));
-
-    timeOfLastRev = currentTime;
+    timeOfCurrentRev = micros();
 }
