@@ -25,7 +25,7 @@ static daq_FuelPressure_t gpio_getFuelPressure();
 
 static void gpio_engineRevInterrupt();
 
-
+// Keeps track of the amount of revs between each call of updateSensorInfo
 volatile unsigned int revCount;
 
     void
@@ -60,13 +60,15 @@ static WheelSpeed_s gpio_getWheelSpeed()
 
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
 {
-    //int gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0)) ) ) * 60;
-
+    // Amount of time since the last time this function was called
     uint32_t timeElapsed = (uint32_t)millis() - lastPoll_ms;
+    // The average amount of time between each rev
     float timePerRev = (float)timeElapsed / (float)revCount;
 
+    // So we get the amount of time for 1 rev, do 1/elapsedTime to get it in Hz. Then mulitply by 60 to get in rpm.
     uint32_t rpm = (int)((1.0 / timePerRev) * 60.0);
 
+    // Reset the revCount back to 0 for the next time this funciton is called
     revCount = 0;
 
     return rpm;
@@ -113,8 +115,7 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 
 
 static void gpio_engineRevInterrupt(){
-    revCount++;
-
-    // timeOfLastRev = timeOfCurrentRev;
-    // timeOfCurrentRev = micros();
+    
+    // One call of this function is equal to 2 engine revs
+    revCount += 2;
 }
