@@ -14,7 +14,7 @@
 #define REV_SENSOR_PIN 23;
 
 static WheelSpeed_s gpio_getWheelSpeed();
-static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms);
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms);
 static DamperPos_S gpio_getDamperPosition();
 static daq_GearPos_t gpio_getGearPosition();
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition();
@@ -25,13 +25,12 @@ static daq_FuelPressure_t gpio_getFuelPressure();
 
 volatile unsigned int timeOfLastRev;
 volatile unsigned int timeOfCurrentRev;
-static int gEngineRev
 
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
-  attachInterrupt(digitalPinToInterrupt(REV_SENSOR_PIN), gpio_revTickerInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
 }
 
 
@@ -57,11 +56,11 @@ static WheelSpeed_s gpio_getWheelSpeed()
     return wheelSpeed;
 }
 
-static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPol_ms)
+static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
 {
-    gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0))) );
+    int gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0)) ) ) * 60;
  
-    return engineRev;
+    return gEngineRev;
 }
 
 static DamperPos_S gpio_getDamperPosition()
@@ -104,7 +103,7 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 
 
 
-static void gpio_revTickerInterrupt(int revCount){
+static void gpio_engineRevInterrupt(){
     timeOfLastRev = timeOfCurrentRev;
 
     timeOfCurrentRev = micros();
