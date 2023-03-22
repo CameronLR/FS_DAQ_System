@@ -23,17 +23,16 @@ static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
 static daq_FuelPressure_t gpio_getFuelPressure();
 
-volatile unsigned int timeOfLastRev;
-volatile unsigned int timeOfCurrentRev;
+volatile unsigned int revCount;
 
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt(digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
+  revCount = 0;
+
 }
-
-
 
 bool updateSensorInfo(sensorData_s *pSensorData)
 {
@@ -58,8 +57,13 @@ static WheelSpeed_s gpio_getWheelSpeed()
 
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
 {
-    int gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0)) ) ) * 60;
- 
+    //int gEngineRev = (int)(1.0 / ( (float)(((float)timeOfCurrentRev/1000000.0) - ((float)timeOfLastRev/1000000.0)) ) ) * 60;
+
+    uint32_t timeElapsed = (uint32_t)millis() - lastPoll_ms;
+    float timePerRev = (float)timeElapsed / (float)revCount;
+
+    uint32_t rpm = (int)((1.0 / timePerRev) * 60.0);
+
     return gEngineRev;
 }
 
@@ -104,7 +108,8 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 
 
 static void gpio_engineRevInterrupt(){
-    timeOfLastRev = timeOfCurrentRev;
+    revCount++;
 
-    timeOfCurrentRev = micros();
+    // timeOfLastRev = timeOfCurrentRev;
+    // timeOfCurrentRev = micros();
 }
