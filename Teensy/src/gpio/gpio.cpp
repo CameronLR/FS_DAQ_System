@@ -14,7 +14,7 @@
 #define REV_SENSOR_PIN 23
 
 static WheelSpeed_s gpio_getWheelSpeed();
-static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms);
+static daq_EngineRev_t gpio_getEngineRevs();
 static DamperPos_S gpio_getDamperPosition();
 static daq_GearPos_t gpio_getGearPosition();
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition();
@@ -48,7 +48,7 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->batteryVoltage_dV = gpio_getVBat();
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
     pSensorData->fuelPressure_pa = gpio_getFuelPressure();
-
+    pSensorData->time_ms = millis();
     return false;
 }
 

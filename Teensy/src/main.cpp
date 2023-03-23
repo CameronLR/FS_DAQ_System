@@ -43,11 +43,11 @@ void loop()
 
   bool error = updateSensorInfo(&dataStruct);
 
-  dataStruct.time_ms = millis();
+  // uint32_t currentTime_ms = millis();
 
   if (!error)
   {
-    sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
+    sendUpdatedSensorInfo(&dataStruct);
   }
 
   delay(500);
