@@ -24,6 +24,8 @@ void setup()
 
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
+  gpio_init();
+
   if (timeStatus() != timeSet)
   {
     Serial.println("Unable to sync with the RTC");
@@ -38,13 +40,14 @@ void setup()
 
 void loop()
 {
+
   bool error = updateSensorInfo(&dataStruct);
 
   dataStruct.time_ms = millis();
 
   if (!error)
   {
-    sendUpdatedSensorInfo(&dataStruct);
+    sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
   }
 
   delay(500);
@@ -62,3 +65,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
     sdCard_appendLine(pSensorData);
   }
 }
+
+
+

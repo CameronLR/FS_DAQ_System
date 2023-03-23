@@ -55,7 +55,7 @@ typedef struct sensorData_s
   // fuel pressure in pascals?
   daq_FuelPressure_t fuelPressure_pa;
   // program run time
-  unsigned long time_ms;
+  uint32_t time_ms;
 } sensorData_s;
 
 #endif
