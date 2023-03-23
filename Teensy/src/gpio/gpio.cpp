@@ -40,7 +40,7 @@ volatile int revPosition = 0;
 bool updateSensorInfo(sensorData_s *pSensorData)
 {
     pSensorData->wheelSpeed_mph = gpio_getWheelSpeed();
-    pSensorData->engineRev_rpm = gpio_getEngineRevs(pSensorData->time_ms);
+    pSensorData->engineRev_rpm = gpio_getEngineRevs();
     pSensorData->damperPos_mm = gpio_getDamperPosition();
     pSensorData->gearPos = gpio_getGearPosition();
     pSensorData->steeringWheelPos_degrees = gpio_getSteeringWheelPosition();
@@ -58,17 +58,10 @@ static WheelSpeed_s gpio_getWheelSpeed()
     return wheelSpeed;
 }
 
-static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
+static daq_EngineRev_t gpio_getEngineRevs()
 {
-
     int end = revCount[(revPosition +SIZE_OF_CIRCLE_ARRAY -1) % SIZE_OF_CIRCLE_ARRAY];
     int start = revCount[revPosition];
-
-    // Serial.print((revPosition +SIZE_OF_CIRCLE_ARRAY -1) % SIZE_OF_CIRCLE_ARRAY);
-    // Serial.print(" - ");
-    // Serial.print(revPosition);
-    // Serial.print(" = ");
-    // Serial.println((end - start) / (SIZE_OF_CIRCLE_ARRAY-1));
 
     float timePerRev = (float)(end - start) / (SIZE_OF_CIRCLE_ARRAY-1) / 1000000.0;
 
@@ -120,7 +113,6 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 
 static void gpio_engineRevInterrupt(){
     
-    // One call of this function is equal to 2 engine revs
     revCount[revPosition] = micros();
     revPosition = (revPosition+1) % SIZE_OF_CIRCLE_ARRAY;
 }

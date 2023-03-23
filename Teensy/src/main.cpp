@@ -39,9 +39,6 @@ void loop()
 {
 
   bool error = updateSensorInfo(&dataStruct);
-  dataStruct.time_ms = millis();
-
-  delay(100);
 
   uint32_t currentTime_ms = millis();
 
