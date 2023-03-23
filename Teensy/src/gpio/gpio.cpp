@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 #include "gpio.h"
-
+#define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
 
 static WheelSpeed_s gpio_getWheelSpeed();
@@ -26,14 +26,14 @@ static daq_FuelPressure_t gpio_getFuelPressure();
 static void gpio_engineRevInterrupt();
 
 // Keeps track of the amount of revs between each call of updateSensorInfo
-volatile unsigned int revCount;
+volatile int revCount[SIZE_OF_CIRCLE_ARRAY];
+volatile int revPosition = 0;
 
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
-  revCount = 0;
 
 }
 
@@ -60,16 +60,20 @@ static WheelSpeed_s gpio_getWheelSpeed()
 
 static daq_EngineRev_t gpio_getEngineRevs(uint32_t lastPoll_ms)
 {
-    // Amount of time since the last time this function was called
-    uint32_t timeElapsed = (uint32_t)millis() - lastPoll_ms;
-    // The average amount of time between each rev
-    float timePerRev = (float)timeElapsed / (float)revCount;
+
+    int end = revCount[(revPosition +SIZE_OF_CIRCLE_ARRAY -1) % SIZE_OF_CIRCLE_ARRAY];
+    int start = revCount[revPosition];
+
+    // Serial.print((revPosition +SIZE_OF_CIRCLE_ARRAY -1) % SIZE_OF_CIRCLE_ARRAY);
+    // Serial.print(" - ");
+    // Serial.print(revPosition);
+    // Serial.print(" = ");
+    // Serial.println((end - start) / (SIZE_OF_CIRCLE_ARRAY-1));
+
+    float timePerRev = (float)(end - start) / (SIZE_OF_CIRCLE_ARRAY-1) / 1000000.0;
 
     // So we get the amount of time for 1 rev, do 1/elapsedTime to get it in Hz. Then mulitply by 60 to get in rpm.
-    uint32_t rpm = (int)((1.0 / timePerRev) * 60.0);
-
-    // Reset the revCount back to 0 for the next time this funciton is called
-    revCount = 0;
+    int32_t rpm = (int32_t)((1.0 / timePerRev) * 2.0 * 60.0);
 
     return rpm;
 }
@@ -117,5 +121,6 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 static void gpio_engineRevInterrupt(){
     
     // One call of this function is equal to 2 engine revs
-    revCount += 2;
+    revCount[revPosition] = micros();
+    revPosition = (revPosition+1) % SIZE_OF_CIRCLE_ARRAY;
 }

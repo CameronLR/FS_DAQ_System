@@ -37,13 +37,19 @@ void setup()
 
 void loop()
 {
+
   bool error = updateSensorInfo(&dataStruct);
+  dataStruct.time_ms = millis();
+
+  delay(100);
 
   uint32_t currentTime_ms = millis();
 
   if (!error)
   {
     sendUpdatedSensorInfo(&dataStruct, currentTime_ms);
+    Serial.println(dataStruct.engineRev_rpm);
+    delay(50);
   }
 }
 
