@@ -21,6 +21,7 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData);
 void setup()
 {
   Serial.begin(115200);
+  Serial1.begin(9600); //For sending the data to the nano
 
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
