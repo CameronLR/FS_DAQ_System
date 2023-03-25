@@ -96,7 +96,35 @@ static GyroData_s gpio_getGyro()
 
 static daq_BatteryV_t gpio_getVBat()
 {
-    return 0U;
+    #include <Arduino.h>
+    // error handling
+    #define NO_STEPPED_DOWN_VOLTAGE 100
+
+    // A voltage divider should be scaling down the voltage from 12V to 2.4 V before this
+    // refer to https://www.instructables.com/Voltage-Measurement-Using-Arduino/ for how this formula works
+    // the formula for 2 resistors connected in series, forming the voltage divider is: V1 = Vm * (R2/(R1+R2))
+
+    // error handling for A16 returning NULL
+    if(analogRead(PIN_A16) == NULL){
+        exit(NO_STEPPED_DOWN_VOLTAGE);
+    }
+    
+    // converting decivolt input to volts
+    float scaled_Batt_Volt = (analogRead(PIN_A16)/10);
+    // Resistor values based on Voltage Divider in DAQ schematic
+    float R5 = 4000.0;
+    float R6 = 1000.0;
+    // To obtain readable data, we multiply by resolution of ADC: (12V/5) / 10bit ADC
+    float resolution = (2.4/1023);
+    // conversion to 12V scale
+    float upscale = ((R5 + R6)/R6);
+
+    // sub values into formula
+    float voltage = scaled_Batt_Volt * resolution * upscale;
+    // convert back to Decivolts
+    float actual_Batt_dVolt = voltage*10;
+    
+    return actual_Batt_dVolt;
 }
 
 static daq_ThrottlePos_t gpio_getThrottlePosition()
