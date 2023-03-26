@@ -6,44 +6,57 @@
  */
 
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 #include "tni.h"
+#include "Nextion.h"
 
-bool sendDataToNano(sensorData_s *pSensorData)
+// Declare Nextion objects - (page_id, component_id, component_name) 
+NexNumber nRevs = NexNumber(0, 1, "nRevs");
+NexNumber nBat = NexNumber(0, 2, "nBat");
+NexNumber nGear = NexNumber(0, 3, "nGear");
+NexNumber nSpeed = NexNumber(0, 4, "nSpeed");
+
+bool nextion_init() 
 {
     /**
-    * \return result - true if sending was successful, else false
+    * \return result - true if init was successful, else false
     * \details
-    *      Function that sends the sensordata to the Arduino Nano
-    *      Uses Serial1 to communicate between them
+    *      Function initializes the Nextion using Nextion.h library, 
+    *      may need to edit the NextionConfig.h file to get the correct serial atm
+    *      it is Serial2 
     */
 
-    Serial1.print(String(pSensorData->wheelSpeed_mph.fl) + ",");
-    Serial1.print(String(pSensorData->wheelSpeed_mph.fr) + ",");
-    Serial1.print(String(pSensorData->wheelSpeed_mph.rr) + ",");
-    Serial1.print(String(pSensorData->wheelSpeed_mph.rl) + ",");
+    nexInit();
+    return 1; 
+}
 
-    Serial1.print(String(pSensorData->engineRev_rpm) + ",");
 
-    Serial1.print(String(pSensorData->damperPos_mm.fr) + ",");
-    Serial1.print(String(pSensorData->damperPos_mm.fl) + ",");
-    Serial1.print(String(pSensorData->damperPos_mm.rr) + ",");
-    Serial1.print(String(pSensorData->damperPos_mm.rl) + ",");
+bool sendDataToNextion(sensorData_s *pSensorData)
+{
+    /**
+    * \param[in] pSensorData pointer to sensor data to append to csv file
+    * \return result - true if write was successful, else false
+    * \details
+    *      function recives a pointer to sensordata, it then 
+    *      sends the data To display by updating their values, for wheel speed
+    *      it takes an average
+    */
+    
+    nRevs.setValue(pSensorData->engineRev_rpm);
 
-    Serial1.print(String(pSensorData->gearPos) + ",");
+    nBat.setValue(pSensorData->batteryVoltage_dV);
 
-    Serial1.print(String(pSensorData->steeringWheelPos_degrees) + ",");
+    nGear.setValue(pSensorData->gearPos);
 
-    Serial1.print(String(pSensorData->gyro.x) + ",");
-    Serial1.print(String(pSensorData->gyro.y) + ",");
-    Serial1.print(String(pSensorData->gyro.z) + ",");
+    //calculate the average speed from the four wheels
+    int totalWheelSpeed;
 
-    Serial1.print(String(pSensorData->batteryVoltage_dV) + ",");
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.fr;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.fl;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.rr;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.rl;
 
-    Serial1.print(String(pSensorData->throttlePos_mm) + ",");
+    nSpeed.setValue(totalWheelSpeed/4);
 
-    Serial1.print(String(pSensorData->fuelPressure_pa) + ",");
-
-    Serial1.println(String(pSensorData->time_ms) + ",");
-  
-    return true;
+    return 1;
 }

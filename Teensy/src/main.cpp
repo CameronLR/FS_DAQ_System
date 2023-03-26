@@ -21,7 +21,6 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData);
 void setup()
 {
   Serial.begin(115200);
-  Serial1.begin(9600); //For sending the data to the nano
 
   setSyncProvider(RTC.get); // the function to get the time from the RTC
 
@@ -37,6 +36,7 @@ void setup()
   }
 
   sdCard_init();
+  nextion_init();
 }
 
 void loop()
@@ -62,7 +62,7 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
   }
   else
   {
-    sendDataToNano(pSensorData);
+    sendDataToNextion(pSensorData);
     sdCard_appendLine(pSensorData);
   }
 }
