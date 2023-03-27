@@ -96,19 +96,16 @@ static GyroData_s gpio_getGyro()
 }
 
 // defining resistors for voltage divider
-constexpr float BATTERY_SCALER = (4000.0f + 1000.0f ) / 1000.0f;
-// the ADC analog Input is returned in 10 bit format 
+constexpr float BATTERY_SCALAR = (4000.0f + 1000.0f ) / 1000.0f;
+// the ADC analog input is returned in 10 bit format 
 #define ADC_MAX_VALUE 1023
 // the ADC can only handle 3.3V
 #define ADC_MAX_VOLTAGE 3.3
 static daq_BatteryV_t gpio_getVBat()
 {
-    // A voltage divider should be scaling down the voltage from 12V to 2.4 V before this
-    // refer to https://www.instructables.com/Voltage-Measurement-Using-Arduino/ for how this formula works
+    float batteryAnalogIn = analogRead(BATTERY_SENSOR_PIN);
     // the formula for 2 resistors connected in series, forming the voltage divider is: V1 = Vm * (R2/(R1+R2))
-
-    float batteryAnalogIn = BATTERY_SENSOR_PIN;
-    float batteryVoltage_dV = ((batteryAnalogIn / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE) * BATTERY_SCALER;
+    float batteryVoltage_dV = ((batteryAnalogIn / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE) * BATTERY_SCALAR;
     
     return batteryVoltage_dV;
 }
