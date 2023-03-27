@@ -11,10 +11,10 @@
 #include "Nextion.h"
 
 // Declare Nextion objects - (page_id, component_id, component_name) 
-NexNumber nRevs = NexNumber(0, 1, "nRevs");
-NexNumber nBat = NexNumber(0, 2, "nBat");
-NexNumber nGear = NexNumber(0, 3, "nGear");
-NexNumber nSpeed = NexNumber(0, 4, "nSpeed");
+NexNumber nRevs = NexNumber(0, 5, "nRevs");
+NexNumber nBat = NexNumber(0, 8, "nBat");
+NexNumber nGear = NexNumber(0, 4, "nGear");
+NexNumber nSpeed = NexNumber(0, 6, "nSpeed");
 
 bool nextion_init() 
 {
@@ -27,7 +27,7 @@ bool nextion_init()
     */
 
     nexInit();
-    return 1; 
+    return true; 
 }
 
 
@@ -58,5 +58,5 @@ bool sendDataToNextion(sensorData_s *pSensorData)
 
     nSpeed.setValue(totalWheelSpeed/4);
 
-    return 1;
+    return true;
 }
