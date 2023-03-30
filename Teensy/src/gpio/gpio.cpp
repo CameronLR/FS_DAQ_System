@@ -105,7 +105,8 @@ static daq_BatteryV_t gpio_getVBat()
 {
     float batteryAnalogIn = analogRead(BATTERY_SENSOR_PIN);
     // the formula for 2 resistors connected in series, forming the voltage divider is: V1 = Vm * (R2/(R1+R2))
-    float batteryVoltage_dV = ((batteryAnalogIn / ADC_MAX_VALUE) * ADC_MAX_VOLTAGE) * BATTERY_SCALAR;
+    daq_BatteryV_t batteryVoltage_dV = (daq_BatteryV_t) ((batteryAnalogIn /
+    ADC_MAX_VALUE) * ADC_MAX_VOLTAGE) * BATTERY_SCALAR * 10;
     
     return batteryVoltage_dV;
 }
