@@ -6,11 +6,57 @@
  */
 
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 #include "tni.h"
+#include "Nextion.h"
 
-bool sendDataToNano(sensorData_s *pSensorData)
+// Declare Nextion objects - (page_id, component_id, component_name) 
+NexNumber nRevs = NexNumber(0, 5, "nRevs");
+NexNumber nBat = NexNumber(0, 8, "nBat");
+NexNumber nGear = NexNumber(0, 4, "nGear");
+NexNumber nSpeed = NexNumber(0, 6, "nSpeed");
+
+bool nextion_init() 
 {
-    // Send data to nano
+    /**
+    * \return result - true if init was successful, else false
+    * \details
+    *      Function initializes the Nextion using Nextion.h library, 
+    *      may need to edit the NextionConfig.h file to get the correct serial atm
+    *      it is Serial2 
+    */
+
+    nexInit();
+    return true; 
+}
+
+
+bool sendDataToNextion(sensorData_s *pSensorData)
+{
+    /**
+    * \param[in] pSensorData pointer to sensor data to append to csv file
+    * \return result - true if write was successful, else false
+    * \details
+    *      function recives a pointer to sensordata, it then 
+    *      sends the data To display by updating their values, for wheel speed
+    *      it takes an average
+    */
+    
+    nRevs.setValue(pSensorData->engineRev_rpm);
+
+    nBat.setValue(pSensorData->batteryVoltage_dV);
+
+    nGear.setValue(pSensorData->gearPos);
+
+    //calculate the average speed from the four wheels
+    int totalWheelSpeed;
+
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.fr;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.fl;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.rr;
+    totalWheelSpeed += pSensorData->wheelSpeed_mph.rl;
+
+    nSpeed.setValue(totalWheelSpeed/4);
 
     return true;
 }

@@ -36,6 +36,7 @@ void setup()
   }
 
   sdCard_init();
+  nextion_init();
 }
 
 void loop()
@@ -61,7 +62,7 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
   }
   else
   {
-    sendDataToNano(pSensorData);
+    sendDataToNextion(pSensorData);
     sdCard_appendLine(pSensorData);
   }
 }

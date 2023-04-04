@@ -3,6 +3,8 @@
 
 #include "cmn/daq_common.h"
 
-extern bool sendDataToNano(sensorData_s *pSensorData);
+extern bool sendDataToNextion(sensorData_s *pSensorData);
+extern bool nextion_init();
+
 
 #endif
