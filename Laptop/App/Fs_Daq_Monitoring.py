@@ -6,44 +6,43 @@
 ################################################################################
 import sys
 from enum import Enum
+from dataclasses import dataclass
 
 from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6.QtWidgets import QDialog
+# from PySide6.QtWidgets.QDialog import QDialogButtonBox
+
 import pyqtgraph
 
 import serial.tools.list_ports
 
-from DataCollector import DataCollectorThread, CollectorStatus, FsDaqData
+from Data_Collector import DataCollectorThread, CollectorStatus, FsDaqData
+import Config_Interfacer
 
 
 __VERSION__ = "v1.0"
 
 
-class GraphPlots(int, Enum):
-    """Enum representing all the options for graph plots"""
-    SPEED = 0
-    THROTTLE = 1
-    REVS = 2
-    DAMPERS = 3
-    FUEL = 4
-    GEAR = 5
-    WHEEL = 6
-    STRAIN = 7
-    GYRO = 8
-    VOLTAGE = 9
-    END = 10
+class LiveWidgetType(int, Enum):
+    """Enum representing all the options for live monitoring widgets"""
+    NUMERICAL = 0
 
 
-GRAPH_Y_AXIS_LABEL = ["" for i in range(GraphPlots.END)]
-GRAPH_Y_AXIS_LABEL[GraphPlots.SPEED] = "Speed (MPH)"
-GRAPH_Y_AXIS_LABEL[GraphPlots.THROTTLE] = "Throttle (%)"
-GRAPH_Y_AXIS_LABEL[GraphPlots.REVS] = "Revs (RPM)"
-GRAPH_Y_AXIS_LABEL[GraphPlots.DAMPERS] = "Damper Position"
-GRAPH_Y_AXIS_LABEL[GraphPlots.FUEL] = "Fuel Pressure"
-GRAPH_Y_AXIS_LABEL[GraphPlots.GEAR] = "Gear Position"
-GRAPH_Y_AXIS_LABEL[GraphPlots.WHEEL] = "Wheel Position"
-GRAPH_Y_AXIS_LABEL[GraphPlots.STRAIN] = "Strain"
-GRAPH_Y_AXIS_LABEL[GraphPlots.GYRO] = "Gyro"
-GRAPH_Y_AXIS_LABEL[GraphPlots.VOLTAGE] = "Voltage (V)"
+@dataclass
+class GuiParameters:
+    graph_active: bool
+    live_active: bool
+    label: str
+    min_value: int
+    max_value: int
+    live_widget_type: LiveWidgetType
+
+
+@dataclass
+class Settings:
+    active_guis: list(GuiParameters)
+    serial_port: str
+    serial_baud: int
 
 
 class Gui(QtWidgets.QMainWindow):
@@ -51,6 +50,8 @@ class Gui(QtWidgets.QMainWindow):
 
     def __init__(self):
         super(Gui, self).__init__()
+
+        self.settings = Config_Interfacer.load()
 
         self.data = [[] for i in range(FsDaqData.END)]
 
@@ -60,8 +61,15 @@ class Gui(QtWidgets.QMainWindow):
 
         self.init_tool_bar()
 
-        self.init_graph_widget()
-        self.init_live_widget()
+        self.graph_plots = []
+        self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
+
+        for active_gui, count in enumerate(self.settings.active_guis):
+            self.graph_plots.append(self.init_graph_widget(active_gui.label))
+            self.init_live_widget()
+            self.graph_widget.addItem(self.graph_plots[count][0], count, 0)
+
+        self.graph_widget.setBackground('w')
 
         self.tab_widget = QtWidgets.QTabWidget()
 
@@ -78,27 +86,13 @@ class Gui(QtWidgets.QMainWindow):
         self.data_collection_thread.data_signal.connect(self.received_data)
         self.data_collection_thread.start()
 
-    def init_graph_widget(self):
-        self.graph_plots = []
+    def init_graph_widget(self, label):
+        graph = pyqtgraph.PlotItem()
+        plot = graph.plot([0], [0])
 
-        self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
+        self.graph_plots.append([graph, plot])
 
-        for i in range(0, GraphPlots.END):
-
-            graph = pyqtgraph.PlotItem()
-            plot = graph.plot([0], [0])
-
-            self.graph_plots.append([graph, plot])
-
-            graph.setLabel('left', GRAPH_Y_AXIS_LABEL[i])
-            if i != 0:
-                graph.setXLink(self.graph_plots[i-1][0])
-            if i != GraphPlots.END - 1:
-                graph.getAxis('bottom').setTicks([])
-
-            self.graph_widget.addItem(graph, row=i, col=0)
-
-        self.graph_widget.setBackground('w')
+        graph.setXLink(graph)
 
     def init_live_widget(self):
 
@@ -137,6 +131,10 @@ class Gui(QtWidgets.QMainWindow):
         tool_bar = QtWidgets.QToolBar()
         self.addToolBar(tool_bar)
 
+        settings_btn = QtGui.QAction("Settings", self)
+        settings_btn.triggered.connect(self.on_settings)
+        tool_bar.addAction(settings_btn)
+
         stop_btn = QtGui.QAction("Stop", self)
         stop_btn.triggered.connect(self.on_stop_monitoring)
         tool_bar.addAction(stop_btn)
@@ -155,6 +153,16 @@ class Gui(QtWidgets.QMainWindow):
             serial_port_selector.addItem(f"{port} - {description}")
 
         tool_bar.addWidget(serial_port_selector)
+
+    def on_settings(self):
+        print("Entering Settings")
+
+        dlg = SettingsPopUp(self.settings)
+        if dlg.exec_():
+            Config_Interfacer.save(dlg.settings)
+            self.settings = dlg.settings
+        else:
+            print("Cancel!")
 
     def on_start_monitoring(self):
         print("Starting monitoring")
@@ -179,6 +187,8 @@ class Gui(QtWidgets.QMainWindow):
             self.update_live()
 
     def update_graphs(self):
+        """Updates graph plots in live tab
+        """
         self.graph_plots[GraphPlots.SPEED][1].setData(
             y=self.data[FsDaqData.WHL_SPEED_FR], x=self.data[FsDaqData.TIME])
         self.graph_plots[GraphPlots.REVS][1].setData(
@@ -199,6 +209,8 @@ class Gui(QtWidgets.QMainWindow):
             y=self.data[FsDaqData.FUEL_PRESSURE], x=self.data[FsDaqData.TIME])
 
     def update_live(self):
+        """Updates widgets in live tab
+        """
         self.live_objects[GraphPlots.SPEED].update_value(
             self.data[FsDaqData.WHL_SPEED_FR][-1])
         self.live_objects[GraphPlots.REVS].update_value(
@@ -222,11 +234,6 @@ class Gui(QtWidgets.QMainWindow):
         pass
 
 #################### Live Monitoring Widget Management ####################
-
-
-class LiveWidgetType(int, Enum):
-    """Enum representing all the options for live monitoring widgets"""
-    NUMERICAL = 0
 
 
 LIVE_WIDGET_LBL_FONT = QtGui.QFont("Arial", 28, QtGui.QFont.Bold)
@@ -269,6 +276,28 @@ class LiveWidget():
             self.value.setText(str(value))
         else:
             print("ERROR: Invalid widget type")
+
+
+class SettingsPopUp(QDialog):
+    def __init__(self, settings):
+        super().__init__()
+
+        self.settings = settings
+
+        self.setWindowTitle("Settings")
+
+        apply_btn = QtWidgets.QDialogButtonBox.Ok
+        close_btn = QtWidgets.QDialogButtonBox.Cancel
+
+        self.buttonBox = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QtWidgets.QVBoxLayout()
+        message = QtWidgets.QLabel("Set settings")
+        self.layout.addWidget(message)
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
 
 
 def main():

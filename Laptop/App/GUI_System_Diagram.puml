@@ -1,0 +1,28 @@
+@startuml
+
+
+  component GUI{
+    component [Init]
+    component [Graphs]
+    component [Settings_BTN]
+}
+
+component "Configuration Handler"{
+  [Save]
+  [Load]
+}
+
+
+component Settings_Pop_up
+
+[Settings_BTN] --> [Settings_Pop_up]
+[Settings_Pop_up] --> [Save] : "Apply"
+[Settings_Pop_up] --> [Settings_BTN] : "Close"
+
+[Init] --> [Load]
+[Load] --> [Init]
+[Save] --> Configuration_File
+[Load] --> Configuration_File
+Configuration_File --> [Load]
+
+@enduml
