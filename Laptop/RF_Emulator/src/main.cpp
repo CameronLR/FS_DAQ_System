@@ -27,7 +27,7 @@ void setup()
 
 void loop()
 {
-  for (uint32_t i = 0; i < sizeof(data_output_limit) / sizeof(data_output_limit[0]); i++)
+  for (uint32_t i = 0; i <= sizeof(data_output_limit) / sizeof(data_output_limit[0]); i++)
   {
     Serial.print(random(0, data_output_limit[i]));
     Serial.print(",");

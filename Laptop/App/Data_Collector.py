@@ -5,14 +5,16 @@
 #
 ################################################################################
 import time
+import datetime
 from enum import Enum
+
 
 import serial
 
 from PySide6 import QtCore
 
 
-DEFAULT_SERIAL_PORT = 'COM5'
+DEFAULT_SERIAL_PORT = 'COM10'
 SERIAL_PORT_BAUD = 115200
 
 
@@ -51,6 +53,8 @@ class DataCollectorThread(QtCore.QThread):
     def __init__(self, parent):
         super(DataCollectorThread, self).__init__(parent=parent)
         self.status = CollectorStatus.STOPPED
+
+        self.start_time = 0
 
         try:
             self.serial = serial.Serial(DEFAULT_SERIAL_PORT, SERIAL_PORT_BAUD, timeout=1)
@@ -120,7 +124,7 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_data = " "
 
-        while self.serial is None and self.serial.is_open and \
+        while self.serial is not None and self.serial.is_open and \
                 self.serial._overlapped_read is not None:  # pylint: disable=W0212
             serial_data = self.serial.readline()
 
@@ -165,6 +169,8 @@ class DataCollectorThread(QtCore.QThread):
             print("ERROR: Invalid number of parameters")
             extracted_data_list = None
         else:
-            extracted_data_list = [int(data_item) for data_item in serial_list[:-1]]
+            extracted_data_list = [int(data_item) for data_item in serial_list[:-2]]
+            # extracted_data_list.append(datetime.datetime.fromtimestamp(int(serial_list[-2])/1000.0))
+            extracted_data_list.append(int(serial_list[-2]))
 
         return extracted_data_list

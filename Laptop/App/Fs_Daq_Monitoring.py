@@ -23,9 +23,9 @@ import Config_Interfacer
 __VERSION__ = "v1.0"
 
 
-class LiveWidgetType(int, Enum):
+class LiveWidgetType(str, Enum):
     """Enum representing all the options for live monitoring widgets"""
-    NUMERICAL = 0
+    NUMERICAL = "Numerical"
 
 
 @dataclass
@@ -40,7 +40,7 @@ class GuiParameters:
 
 @dataclass
 class Settings:
-    active_guis: list(GuiParameters)
+    active_guis: list[GuiParameters]
     serial_port: str
     serial_baud: int
 
@@ -52,6 +52,7 @@ class Gui(QtWidgets.QMainWindow):
         super(Gui, self).__init__()
 
         self.settings = Config_Interfacer.load()
+        # Config_Interfacer.save(self.settings)
 
         self.data = [[] for i in range(FsDaqData.END)]
 
@@ -64,12 +65,71 @@ class Gui(QtWidgets.QMainWindow):
         self.graph_plots = []
         self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
 
-        for active_gui, count in enumerate(self.settings.active_guis):
-            self.graph_plots.append(self.init_graph_widget(active_gui.label))
-            self.init_live_widget()
-            self.graph_widget.addItem(self.graph_plots[count][0], count, 0)
+        self.live_widget = QtWidgets.QWidget()
+        self.live_objects = []
+
+        self.nbr_data_points = len(self.settings.active_guis)
+
+        active_lives = 0
+        active_graphs = 0
+
+        active_gui: GuiParameters
+        for count, active_gui in enumerate(self.settings.active_guis):
+            if active_gui.graph_active:
+                graph, plot = self.create_graph_widget(active_gui.label)
+                if count != 0:
+                    graph.setXLink(self.graph_plots[count-1][0])
+
+                print(f"COUNT={count}, max = {self.nbr_data_points}")
+
+                # date_axis = pyqtgraph.DateAxisItem(orientation='bottom')
+                # graph.setAxisItems(axisItems={'bottom': date_axis})
+
+                if count != self.nbr_data_points - 1:
+                    graph.getAxis('bottom').setTicks([])
+                else:
+                    print(active_gui.label)
+
+                self.graph_widget.addItem(graph, active_graphs, 0)
+
+                active_graphs += 1
+
+            else:
+                graph, plot = None, None
+
+            if active_gui.live_active:
+                live_widget = self.create_live_widget(active_gui.label)
+                active_lives += 1
+            else:
+                live_widget = None
+
+            self.graph_plots.append([graph, plot])
+            self.live_objects.append(live_widget)
 
         self.graph_widget.setBackground('w')
+
+        if active_lives < 10:
+            dimensions = 3
+        else:
+            dimensions = 4
+
+        v_layout = QtWidgets.QVBoxLayout()
+        offset = 0
+        for x in range(dimensions):
+            h_layout = QtWidgets.QHBoxLayout()
+            for y in range(dimensions):
+                # print(f"x={x}, y={y}, offset={offset}, idx={x*dimensions+y+offset}")
+                if x*dimensions+y+offset >= len(self.live_objects):
+                    continue
+
+                while (self.live_objects[x*dimensions+y+offset] is None):
+                    offset += 1
+
+                h_layout.addWidget(self.live_objects[x*dimensions+y+offset].widget)
+
+            v_layout.addLayout(h_layout)
+
+        self.live_widget.setLayout(v_layout)
 
         self.tab_widget = QtWidgets.QTabWidget()
 
@@ -86,46 +146,18 @@ class Gui(QtWidgets.QMainWindow):
         self.data_collection_thread.data_signal.connect(self.received_data)
         self.data_collection_thread.start()
 
-    def init_graph_widget(self, label):
-        graph = pyqtgraph.PlotItem()
+    def create_graph_widget(self, label):
+        graph = pyqtgraph.PlotItem(axisItems={'bottom': pyqtgraph.DateAxisItem()})
         plot = graph.plot([0], [0])
 
-        self.graph_plots.append([graph, plot])
+        graph.setLabel("left", label)
 
-        graph.setXLink(graph)
+        return graph, plot
 
-    def init_live_widget(self):
+        # graph.setXLink(graph)
 
-        self.live_widget = QtWidgets.QWidget()
-
-        self.live_objects: list(LiveWidget) = []
-
-        for i in range(0, GraphPlots.END):
-            self.live_objects.append(LiveWidget(
-                LiveWidgetType.NUMERICAL, GRAPH_Y_AXIS_LABEL[i]))
-
-        h_layout_1 = QtWidgets.QHBoxLayout()
-        h_layout_2 = QtWidgets.QHBoxLayout()
-        h_layout_3 = QtWidgets.QHBoxLayout()
-
-        h_layout_1.addWidget(self.live_objects[0].widget)
-        h_layout_1.addWidget(self.live_objects[1].widget)
-        h_layout_1.addWidget(self.live_objects[2].widget)
-
-        h_layout_2.addWidget(self.live_objects[3].widget)
-        h_layout_2.addWidget(self.live_objects[4].widget)
-        h_layout_2.addWidget(self.live_objects[5].widget)
-
-        h_layout_3.addWidget(self.live_objects[6].widget)
-        h_layout_3.addWidget(self.live_objects[7].widget)
-        h_layout_3.addWidget(self.live_objects[8].widget)
-
-        v_layout = QtWidgets.QVBoxLayout()
-        v_layout.addLayout(h_layout_1)
-        v_layout.addLayout(h_layout_2)
-        v_layout.addLayout(h_layout_3)
-
-        self.live_widget.setLayout(v_layout)
+    def create_live_widget(self, label):
+        return LiveWidget(LiveWidgetType.NUMERICAL, label)
 
     def init_tool_bar(self):
         tool_bar = QtWidgets.QToolBar()
@@ -147,18 +179,23 @@ class Gui(QtWidgets.QMainWindow):
         serial_port_label.setText("Serial Port: ")
         tool_bar.addWidget(serial_port_label)
 
-        serial_port_selector = QtWidgets.QComboBox()
+        self.serial_port_selector = QtWidgets.QComboBox()
+        self.serial_port_selector.view().pressed.connect(self.populate_serial_combo)
 
+        self.populate_serial_combo()
+
+        tool_bar.addWidget(self.serial_port_selector)
+
+    def populate_serial_combo(self):
+        self.serial_port_selector.clear()
         for port, description, _ in sorted(serial.tools.list_ports.comports()):
-            serial_port_selector.addItem(f"{port} - {description}")
-
-        tool_bar.addWidget(serial_port_selector)
+            self.serial_port_selector.addItem(f"{port} - {description}")
 
     def on_settings(self):
         print("Entering Settings")
 
         dlg = SettingsPopUp(self.settings)
-        if dlg.exec_():
+        if dlg.exec():
             Config_Interfacer.save(dlg.settings)
             self.settings = dlg.settings
         else:
@@ -178,7 +215,7 @@ class Gui(QtWidgets.QMainWindow):
         :param input_data: lis(str): processed data received from signal slot
         """
         # Store data
-        for i in range(FsDaqData.END):
+        for i in range(self.nbr_data_points + 2):
             self.data[i].append(input_data[i])
 
         if self.tab_widget.currentIndex() == 0:
@@ -189,46 +226,16 @@ class Gui(QtWidgets.QMainWindow):
     def update_graphs(self):
         """Updates graph plots in live tab
         """
-        self.graph_plots[GraphPlots.SPEED][1].setData(
-            y=self.data[FsDaqData.WHL_SPEED_FR], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.REVS][1].setData(
-            y=self.data[FsDaqData.ENGINE_REVS], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.DAMPERS][1].setData(
-            y=self.data[FsDaqData.DAMPER_POS_FR], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.GEAR][1].setData(
-            y=self.data[FsDaqData.GEAR_POS], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.WHEEL][1].setData(
-            y=self.data[FsDaqData.STR_WHL_POS], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.GYRO][1].setData(
-            y=self.data[FsDaqData.GYRO_X], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.VOLTAGE][1].setData(
-            y=self.data[FsDaqData.BAT_VOLT], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.THROTTLE][1].setData(
-            y=self.data[FsDaqData.THROTTLE], x=self.data[FsDaqData.TIME])
-        self.graph_plots[GraphPlots.FUEL][1].setData(
-            y=self.data[FsDaqData.FUEL_PRESSURE], x=self.data[FsDaqData.TIME])
+        for count, active_gui in enumerate(self.settings.active_guis):
+            if active_gui.graph_active:
+                self.graph_plots[count][1].setData(y=self.data[count], x=self.data[FsDaqData.TIME])
 
     def update_live(self):
         """Updates widgets in live tab
         """
-        self.live_objects[GraphPlots.SPEED].update_value(
-            self.data[FsDaqData.WHL_SPEED_FR][-1])
-        self.live_objects[GraphPlots.REVS].update_value(
-            self.data[FsDaqData.ENGINE_REVS][-1])
-        self.live_objects[GraphPlots.DAMPERS].update_value(
-            self.data[FsDaqData.DAMPER_POS_FR][-1])
-        self.live_objects[GraphPlots.GEAR].update_value(
-            self.data[FsDaqData.GEAR_POS][-1])
-        self.live_objects[GraphPlots.WHEEL].update_value(
-            self.data[FsDaqData.STR_WHL_POS][-1])
-        self.live_objects[GraphPlots.GYRO].update_value(
-            self.data[FsDaqData.GYRO_X][-1])
-        self.live_objects[GraphPlots.VOLTAGE].update_value(
-            self.data[FsDaqData.BAT_VOLT][-1])
-        self.live_objects[GraphPlots.THROTTLE].update_value(
-            self.data[FsDaqData.THROTTLE][-1])
-        self.live_objects[GraphPlots.FUEL].update_value(
-            self.data[FsDaqData.FUEL_PRESSURE][-1])
+        for count, active_gui in enumerate(self.settings.active_guis):
+            if active_gui.live_active:
+                self.live_objects[count].update_value(self.data[count][-1])
 
     def init_gui(self):
         pass
@@ -279,7 +286,7 @@ class LiveWidget():
 
 
 class SettingsPopUp(QDialog):
-    def __init__(self, settings):
+    def __init__(self, settings: Settings):
         super().__init__()
 
         self.settings = settings
@@ -293,11 +300,58 @@ class SettingsPopUp(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
-        self.layout = QtWidgets.QVBoxLayout()
+        self.graph_settings_line_list = []
+
+        grid_layout = QtWidgets.QGridLayout()
+
+        v_layout = QtWidgets.QVBoxLayout()
+
         message = QtWidgets.QLabel("Set settings")
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+        v_layout.addWidget(message)
+
+        for count, graph_data in enumerate(settings.active_guis):
+            graph_settings_line = GraphSettingsLine(count, graph_data)
+            self.graph_settings_line_list.append(graph_settings_line)
+
+            grid_layout.addWidget(graph_settings_line.graph_active, count, 0)
+            grid_layout.addWidget(graph_settings_line.live_active, count, 1)
+            grid_layout.addWidget(graph_settings_line.label, count, 2)
+            grid_layout.addWidget(graph_settings_line.min_value, count, 3)
+            grid_layout.addWidget(graph_settings_line.max_value, count, 4)
+            grid_layout.addWidget(graph_settings_line.live_widget_type, count, 5)
+
+        v_layout.addLayout(grid_layout)
+
+        v_layout.addWidget(self.buttonBox)
+        self.setLayout(v_layout)
+
+
+class GraphSettingsLine(QtWidgets.QHBoxLayout):
+    def __init__(self, count, graph_settings: GuiParameters):
+        super().__init__()
+        self.nbr_label = QtWidgets.QLabel(str(count))
+        self.graph_active = QtWidgets.QCheckBox()
+        self.graph_active.setChecked(graph_settings.graph_active)
+        self.live_active = QtWidgets.QCheckBox()
+        self.live_active.setChecked(graph_settings.live_active)
+        self.label = QtWidgets.QTextEdit()
+        self.label.setMaximumHeight(20)
+        self.label.setText(graph_settings.label)
+        self.min_value = QtWidgets.QTextEdit()
+        self.min_value.setMaximumHeight(20)
+        self.min_value.setText(graph_settings.min_value)
+        self.max_value = QtWidgets.QTextEdit()
+        self.max_value.setMaximumHeight(20)
+        self.max_value.setText(graph_settings.max_value)
+        self.live_widget_type = QtWidgets.QComboBox()
+        self.live_widget_type.addItem(LiveWidgetType.NUMERICAL)
+
+    def update_settings(self, graph_settings: GuiParameters):
+        graph_settings.graph_active = self.graph_active.checkState()
+        graph_settings.live_active = self.live_active.checkState()
+        graph_settings.label = self.label.toPlainText()
+        graph_settings.min_value = self.min_value.toPlainText()
+        graph_settings.max_value = self.max_value.toPlainText()
 
 
 def main():
