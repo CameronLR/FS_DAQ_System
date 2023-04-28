@@ -13,6 +13,7 @@
 #include "gpio/gpio.h"
 #include "sdCard/sdCard.h"
 #include "tni/tni.h"
+#include "rfModule/rfModule.h"
 
 sensorData_s dataStruct = {};
 
@@ -36,6 +37,8 @@ void setup()
   }
 
   sdCard_init();
+
+  rfModule_init();
 }
 
 void loop()
@@ -63,6 +66,8 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
   {
     sendDataToNano(pSensorData);
     sdCard_appendLine(pSensorData);
+    rfModule_sendline(pSensorData);
+
   }
 }
 
