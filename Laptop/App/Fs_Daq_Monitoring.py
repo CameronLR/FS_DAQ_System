@@ -52,7 +52,6 @@ class Gui(QtWidgets.QMainWindow):
         super(Gui, self).__init__()
 
         self.settings = Config_Interfacer.load()
-        # Config_Interfacer.save(self.settings)
 
         self.data = [[] for i in range(FsDaqData.END)]
 
@@ -285,6 +284,9 @@ class LiveWidget():
             print("ERROR: Invalid widget type")
 
 
+EMPTY_SETTINGS_ITEM = GuiParameters(False, False, "", 0, 0, LiveWidgetType.NUMERICAL)
+
+
 class SettingsPopUp(QDialog):
     def __init__(self, settings: Settings):
         super().__init__()
@@ -300,17 +302,19 @@ class SettingsPopUp(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
+        self.setLayout(self.create_v_layout(settings.active_guis))
+
+    def create_v_layout(self, active_guis):
         self.graph_settings_line_list = []
+        v_layout = QtWidgets.QVBoxLayout()
 
         grid_layout = QtWidgets.QGridLayout()
-
-        v_layout = QtWidgets.QVBoxLayout()
 
         message = QtWidgets.QLabel("Set settings")
         v_layout.addWidget(message)
 
-        for count, graph_data in enumerate(settings.active_guis):
-            graph_settings_line = GraphSettingsLine(count, graph_data)
+        for count, graph_data in enumerate(active_guis):
+            graph_settings_line = GraphSettingsLine(self, count, graph_data)
             self.graph_settings_line_list.append(graph_settings_line)
 
             grid_layout.addWidget(graph_settings_line.graph_active, count, 0)
@@ -319,16 +323,32 @@ class SettingsPopUp(QDialog):
             grid_layout.addWidget(graph_settings_line.min_value, count, 3)
             grid_layout.addWidget(graph_settings_line.max_value, count, 4)
             grid_layout.addWidget(graph_settings_line.live_widget_type, count, 5)
+            grid_layout.addWidget(graph_settings_line.delete_btn, count, 7)
 
         v_layout.addLayout(grid_layout)
 
-        v_layout.addWidget(self.buttonBox)
-        self.setLayout(v_layout)
+        self.delete_btn = QtWidgets.QPushButton("Add Item", self)
+        self.delete_btn.clicked.connect(self.add_new_item)
+
+        v_layout.addWidget(self.delete_btn)
+
+        return v_layout
+
+    def delete_item(self, idx):
+        self.settings.active_guis.pop(idx)
+        self.setLayout(self.create_v_layout(self.settings.active_guis))
+        print("INDEX ", idx, "\nDELETED ITEM - \n", self.settings.active_guis)
+
+    def add_new_item(self):
+        self.settings.active_guis.append(GuiParameters(False, False, "", 0, 0, LiveWidgetType.NUMERICAL))
+        self.setLayout(self.create_v_layout(self.settings.active_guis))
 
 
 class GraphSettingsLine(QtWidgets.QHBoxLayout):
-    def __init__(self, count, graph_settings: GuiParameters):
+    def __init__(self, parent, count, graph_settings: GuiParameters):
         super().__init__()
+        self.setting_count = count
+        self.parent: SettingsPopUp = parent
         self.nbr_label = QtWidgets.QLabel(str(count))
         self.graph_active = QtWidgets.QCheckBox()
         self.graph_active.setChecked(graph_settings.graph_active)
@@ -339,12 +359,18 @@ class GraphSettingsLine(QtWidgets.QHBoxLayout):
         self.label.setText(graph_settings.label)
         self.min_value = QtWidgets.QTextEdit()
         self.min_value.setMaximumHeight(20)
-        self.min_value.setText(graph_settings.min_value)
+        self.min_value.setText(str(graph_settings.min_value))
         self.max_value = QtWidgets.QTextEdit()
         self.max_value.setMaximumHeight(20)
-        self.max_value.setText(graph_settings.max_value)
+        self.max_value.setText(str(graph_settings.max_value))
         self.live_widget_type = QtWidgets.QComboBox()
         self.live_widget_type.addItem(LiveWidgetType.NUMERICAL)
+        self.delete_btn = QtWidgets.QPushButton()
+        self.delete_btn.setIcon(QtGui.QIcon('delete_icon.png'))
+        self.delete_btn.clicked.connect(self.delete_self)
+
+    def delete_self(self):
+        self.parent.delete_item(self.setting_count)
 
     def update_settings(self, graph_settings: GuiParameters):
         graph_settings.graph_active = self.graph_active.checkState()
