@@ -11,7 +11,7 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include "rfModule.h"
+#include "tli.h"
 
 #include "RF24.h"
 #include "nRF24L01.h" 
