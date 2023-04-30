@@ -11,13 +11,14 @@
 
 #include <Arduino.h>
 #include <SPI.h>
-#include "rfModule.h"
+#include "tli.h"
 
 #include "RF24.h"
 #include "nRF24L01.h" 
 
 #define CE_PIN 9 //Theese can be any
 #define CSN_PIN 10 
+#define BUFFER_SIZE 150
 
 // MOSI: - pin 11 
 // MISO: - pin 12
@@ -26,7 +27,8 @@
 RF24 radio(CE_PIN, CSN_PIN);
 const byte address[6] = "00001";
 const byte checksum = 0;
-const char newline = '\n';
+
+char buffer [BUFFER_SIZE];
 
 bool rfModule_init() 
 {
@@ -44,51 +46,48 @@ bool rfModule_init()
     radio.openWritingPipe(address);            //Set to TX
     radio.stopListening();
 
-    // could send it ints at a time i.e 4 bytes at a time or as 32 byte chunks
-    
-
-
     return true;
 }
 
 
-bool rfModule_sendline(sensorData_s *pSensorData)
+bool rfModule_sendData(sensorData_s *pSensorData)
 {
-    //write the data using pointers to sensor data + checksum + newline
-    radio.write(&pSensorData->wheelSpeed_mph.fr, sizeof(pSensorData->wheelSpeed_mph.fr)); 
-    radio.write(&pSensorData->wheelSpeed_mph.fl, sizeof(pSensorData->wheelSpeed_mph.fl)); 
-    radio.write(&pSensorData->wheelSpeed_mph.rr, sizeof(pSensorData->wheelSpeed_mph.rr)); 
-    radio.write(&pSensorData->wheelSpeed_mph.rl, sizeof(pSensorData->wheelSpeed_mph.rl)); 
+    int usedBufferSpace, bufferCounter;
+    char* bufferPtr; 
 
-    radio.write(&pSensorData->engineRev_rpm, sizeof(pSensorData->engineRev_rpm)); 
+    usedBufferSpace = snprintf ( buffer, BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d,\n", 
+    pSensorData->wheelSpeed_mph.fr, 
+    pSensorData->wheelSpeed_mph.rr, 
+    pSensorData->wheelSpeed_mph.fl, 
+    pSensorData->wheelSpeed_mph.rl, 
+    pSensorData->engineRev_rpm, 
+    pSensorData->damperPos_mm.fr, 
+    pSensorData->damperPos_mm.fl, 
+    pSensorData->damperPos_mm.rr, 
+    pSensorData->damperPos_mm.rl, 
+    pSensorData->gearPos, 
+    pSensorData->steeringWheelPos_degrees, 
+    pSensorData->gyro.x, 
+    pSensorData->gyro.y, 
+    pSensorData->gyro.z, 
+    pSensorData->batteryVoltage_dV, 
+    pSensorData->throttlePos_mm, 
+    pSensorData->fuelPressure_pa, 
+    checksum);
 
-    radio.write(&pSensorData->damperPos_mm.fr, sizeof(pSensorData->damperPos_mm.fr));
-    radio.write(&pSensorData->damperPos_mm.fl, sizeof(pSensorData->damperPos_mm.fl));
-    radio.write(&pSensorData->damperPos_mm.rr, sizeof(pSensorData->damperPos_mm.rr));
-    radio.write(&pSensorData->damperPos_mm.rl, sizeof(pSensorData->damperPos_mm.rl));
-
-    radio.write(&pSensorData->gearPos, sizeof(pSensorData->gearPos));
-
-    radio.write(&pSensorData->steeringWheelPos_degrees, sizeof(pSensorData->steeringWheelPos_degrees));
-
-    radio.write(&pSensorData->gyro.x, sizeof(pSensorData->gyro.x));
-    radio.write(&pSensorData->gyro.y, sizeof(pSensorData->gyro.y));
-    radio.write(&pSensorData->gyro.z, sizeof(pSensorData->gyro.z));
-
-    radio.write(&pSensorData->batteryVoltage_dV, sizeof(pSensorData->batteryVoltage_dV));
-
-    radio.write(&pSensorData->throttlePos_mm, sizeof(pSensorData->throttlePos_mm));
-
-    radio.write(&pSensorData->fuelPressure_pa, sizeof(pSensorData->fuelPressure_pa));
-
-    radio.write(&pSensorData->time_ms, sizeof(pSensorData->time_ms));
-
-    radio.write(&checksum, sizeof(checksum));
-
-    radio.write(&newline, sizeof(newline));
+    //Send in whole 32 byte chunks using the usedBufferSpace too calc how many chunks that is
+    for (int i = 0; i < (floor(usedBufferSpace / 32)); i++ ){
+        bufferCounter = 32*i;
+        bufferPtr = buffer + bufferCounter;
+        radio.write(bufferPtr, 32); 
+    }
+    
+    //Send anything remaining after the 32 byte chunks
+    if ((usedBufferSpace % 32) != 0) {
+        bufferCounter = usedBufferSpace - (usedBufferSpace % 32);
+        bufferPtr = buffer + bufferCounter;
+        radio.write(bufferPtr, (usedBufferSpace % 32));
+    }
 
     return true;
-
 }
-
-
