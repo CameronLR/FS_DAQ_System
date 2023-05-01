@@ -11,6 +11,7 @@ typedef int32_t daq_Strain_t;
 typedef uint32_t daq_BatteryV_t;
 typedef int32_t daq_ThrottlePos_t;
 typedef int32_t daq_FuelPressure_t;
+typedef int32_t daq_GPSVehicleSpeed_t;
 
 typedef struct WheelSpeed_s
 {
@@ -54,6 +55,8 @@ typedef struct sensorData_s
   daq_ThrottlePos_t throttlePos_mm;
   // fuel pressure in pascals?
   daq_FuelPressure_t fuelPressure_pa;
+  // vehicle speed using GPS
+  daq_GPSVehicleSpeed_t GPSVehicleSpeed;
   // program run time
   uint32_t time_ms;
 } sensorData_s;
