@@ -1,5 +1,5 @@
 /**
- * @file
+ * @file 
  * @brief A file that is documented.
  *
  * Detailed description, etc.
@@ -38,7 +38,7 @@ void setup()
 
   sdCard_init();
 
-  rfModule_init();
+  tli_init();
 }
 
 void loop()
@@ -66,7 +66,7 @@ static void sendUpdatedSensorInfo(sensorData_s *pSensorData)
   {
     sendDataToNano(pSensorData);
     sdCard_appendLine(pSensorData);
-    rfModule_sendData(pSensorData);
+    tli_sendData(pSensorData);
 
   }
 }

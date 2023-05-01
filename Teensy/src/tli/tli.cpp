@@ -18,7 +18,7 @@
 
 #define CE_PIN 9 //Theese can be any
 #define CSN_PIN 10 
-#define BUFFER_SIZE 150
+#define TX_BUFFER_SIZE 150
 
 // MOSI: - pin 11 
 // MISO: - pin 12
@@ -28,9 +28,9 @@ RF24 radio(CE_PIN, CSN_PIN);
 const byte address[6] = "00001";
 const byte checksum = 0;
 
-char buffer [BUFFER_SIZE];
+char pTxBuffer [TX_BUFFER_SIZE];
 
-bool rfModule_init() 
+bool tli_init() 
 {
 
     if (!radio.begin()) {
@@ -42,7 +42,7 @@ bool rfModule_init()
     radio.setDataRate(RF24_250KBPS);           // greater = more distance
     radio.setPALevel(RF24_PA_MAX);             // alternative is RF24_PA_LOW.
     
-    radio.setPayloadSize(4);                   //set size of what is being sent (32 max) 4 or 32
+    radio.setPayloadSize(32);                  //32 byte packtes (default and largest possible)
     radio.openWritingPipe(address);            //Set to TX
     radio.stopListening();
 
@@ -50,12 +50,11 @@ bool rfModule_init()
 }
 
 
-bool rfModule_sendData(sensorData_s *pSensorData)
+bool tli_sendData(sensorData_s *pSensorData)
 {
-    int usedBufferSpace, bufferCounter;
-    char* bufferPtr; 
+    int32_t i;
 
-    usedBufferSpace = snprintf ( buffer, BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d,\n", 
+    int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d\n", 
     pSensorData->wheelSpeed_mph.fr, 
     pSensorData->wheelSpeed_mph.rr, 
     pSensorData->wheelSpeed_mph.fl, 
@@ -75,19 +74,13 @@ bool rfModule_sendData(sensorData_s *pSensorData)
     pSensorData->fuelPressure_pa, 
     checksum);
 
-    //Send in whole 32 byte chunks using the usedBufferSpace too calc how many chunks that is
-    for (int i = 0; i < (floor(usedBufferSpace / 32)); i++ ){
-        bufferCounter = 32*i;
-        bufferPtr = buffer + bufferCounter;
-        radio.write(bufferPtr, 32); 
+    //Send i whole 32 byte chunks using the usedBufferSpace too calc i (could be a while loop)
+    for (i = 0; i < (floor(txBufferSize / 32)); i++ ){
+        radio.write(pTxBuffer + (32 * i), 32); 
     }
     
     //Send anything remaining after the 32 byte chunks
-    if ((usedBufferSpace % 32) != 0) {
-        bufferCounter = usedBufferSpace - (usedBufferSpace % 32);
-        bufferPtr = buffer + bufferCounter;
-        radio.write(bufferPtr, (usedBufferSpace % 32));
-    }
+    radio.write(pTxBuffer + ((i + 1) * 32), txBufferSize % 32);
 
     return true;
-}
+} 
