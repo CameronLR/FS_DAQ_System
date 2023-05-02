@@ -52,7 +52,6 @@ bool tli_init()
 
 bool tli_sendData(sensorData_s *pSensorData)
 {
-    int32_t i;
 
     int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d\n", 
     pSensorData->wheelSpeed_mph.fr, 
@@ -75,6 +74,9 @@ bool tli_sendData(sensorData_s *pSensorData)
     checksum);
 
     //Send i whole 32 byte chunks using the usedBufferSpace too calc i (could be a while loop)
+    int32_t i;
+
+
     for (i = 0; i < (floor(txBufferSize / 32)); i++ ){
         radio.write(pTxBuffer + (32 * i), 32); 
     }
