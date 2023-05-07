@@ -15,8 +15,8 @@
 #define REV_SENSOR_PIN 23
 #define BATTERY_SENSOR_PIN A16
 
-#define GEAR_SHIFT_UP_PIN 2
-#define GEAR_SHIFT_DOWN_PIN 3
+#define GEAR_SHIFT_UP_PIN 31 //CTX3
+#define GEAR_SHIFT_DOWN_PIN 32 //OUT1B
 #define NEUTRAL_TIME_MS 300
 
 static WheelSpeed_s gpio_getWheelSpeed();
