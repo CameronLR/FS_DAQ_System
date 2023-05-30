@@ -23,5 +23,9 @@
     "pylint.args": [
         "--max-line-length=120",
         "--disable=I1101"
-    ]
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none"
 }

@@ -5,59 +5,32 @@
 #
 ################################################################################
 import time
-import datetime
 from enum import Enum
 
+from Settings_Interface import Settings, ParameterSettings
 
 import serial
 
 from PySide6 import QtCore
-
-
-DEFAULT_SERIAL_PORT = 'COM10'
-SERIAL_PORT_BAUD = 115200
-
 
 class CollectorStatus(int, Enum):
     """Enum representing the data collector's state"""
     RUNNING = 1
     STOPPED = 2
 
-
-class FsDaqData(int, Enum):
-    """Enum representing the DAQ data points index received through serial port"""
-    WHL_SPEED_FR = 0
-    WHL_SPEED_FL = 1
-    WHL_SPEED_RR = 2
-    WHL_SPEED_RL = 3
-    ENGINE_REVS = 4
-    DAMPER_POS_FR = 5
-    DAMPER_POS_FL = 6
-    DAMPER_POS_RR = 7
-    DAMPER_POS_RL = 8
-    GEAR_POS = 9
-    STR_WHL_POS = 10
-    GYRO_X = 11
-    GYRO_Y = 12
-    GYRO_Z = 13
-    BAT_VOLT = 14
-    THROTTLE = 15
-    FUEL_PRESSURE = 16
-    TIME = 17
-    END = 18
-
-
 class DataCollectorThread(QtCore.QThread):
     data_signal = QtCore.Signal(object)
 
-    def __init__(self, parent):
+    def __init__(self, parent, settings: Settings):
         super(DataCollectorThread, self).__init__(parent=parent)
         self.status = CollectorStatus.STOPPED
+
+        self.active_parameters: list[ParameterSettings] = settings.active_parameters
 
         self.start_time = 0
 
         try:
-            self.serial = serial.Serial(DEFAULT_SERIAL_PORT, SERIAL_PORT_BAUD, timeout=1)
+            self.serial = serial.Serial(settings.serial_port,settings.serial_baud, timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None
@@ -69,7 +42,7 @@ class DataCollectorThread(QtCore.QThread):
              - Processes and posts data to GUI in RUNNING mode
              - Sits in IDLE in STOPPED mode
         """
-        while (1):
+        while 1:
             if self.status == CollectorStatus.STOPPED:
                 # TODO find out if we need to keep flushing here to keep serial buffer clear
                 time.sleep(0.5)
@@ -77,15 +50,25 @@ class DataCollectorThread(QtCore.QThread):
                 self.listen()
 
     @QtCore.Slot(str)
-    def set_serial_port(self, serial_port):
+    def set_settings(self, settings: Settings):
         """Qt Slot to set serial port of DataCollector
+        :param settings: Settings: settings to set
+        """
+        self.set_serial_settings(settings.serial_port, settings.serial_baud)
+
+        self.active_parameters = settings.active_guis
+
+
+    def set_serial_settings(self, serial_port, serial_baud):
+        """Set Serial Settings
         :param serial_port: str: serial port name to open
+        :param serial_baud: int: serial baud rate to set
         """
         if self.serial.is_open:
             self.serial.close()
 
         try:
-            self.serial = serial.Serial(serial_port, SERIAL_PORT_BAUD, timeout=1)
+            self.serial = serial.Serial(serial_port, serial_baud, timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None
@@ -124,8 +107,7 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_data = " "
 
-        while self.serial is not None and self.serial.is_open and \
-                self.serial._overlapped_read is not None:  # pylint: disable=W0212
+        while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None: 
             serial_data = self.serial.readline()
 
             if serial_data is None:
@@ -152,6 +134,9 @@ class DataCollectorThread(QtCore.QThread):
         return self.extract_data(decoded_data)
 
     def is_crc_valid(self, serial_data):
+        """Checks whether CRC is valid in serial data
+        # TODO Implement function
+        """
         _ = serial_data
         return True
 
@@ -165,12 +150,20 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_list = serial_data.split(",")
 
-        if len(serial_list) != FsDaqData.END + 1:
-            print("ERROR: Invalid number of parameters")
+        nbr_of_serial_parameters = len(self.active_parameters) + 1
+
+        if len(serial_list) != nbr_of_serial_parameters:
+            print("ERROR: Invalid number of parameters "
+                 f"(Expected={len(serial_list)}, Actual={nbr_of_serial_parameters})")
             extracted_data_list = None
         else:
-            extracted_data_list = [int(data_item) for data_item in serial_list[:-2]]
-            # extracted_data_list.append(datetime.datetime.fromtimestamp(int(serial_list[-2])/1000.0))
+            extracted_data_list = []
+
+            for parameter_idx, parameter in enumerate(serial_list[:-2]):
+                extracted_data_list.append(float(parameter) * self.active_parameters[parameter_idx].unit_scale)
+
             extracted_data_list.append(int(serial_list[-2]))
+
+            # extracted_data_list.append(datetime.datetime.fromtimestamp(int(serial_list[-2])/1000.0))
 
         return extracted_data_list
