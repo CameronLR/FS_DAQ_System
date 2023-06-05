@@ -34,11 +34,27 @@ static void gpio_engineRevInterrupt();
 volatile int revCount[SIZE_OF_CIRCLE_ARRAY];
 volatile int revPosition = 0;
 
+// setup for GPS readings
+SoftwareSerial gpsSerialPort(GPS_RX_PIN, GPS_TX_PIN);
+Adafruit_GPS GPS(&gpsSerialPort);
+
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
+
+    // initialise GPS reading
+    // connect at 115200 so we can read the GPS fast enough and echo without dropping chars
+    delay(5000);
+    // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- this may need to be changed to 4800 if it doesn't work
+    GPS.begin(9600);
+    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+    // Set the update rate
+    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
+    // delay of 1 second
+    delay(1000);
+
 
 }
 
@@ -64,25 +80,10 @@ static WheelSpeed_s gpio_getWheelSpeed()
     return wheelSpeed;
 }
 
-    // setup for GPS readings
-    SoftwareSerial mySerial(GPS_RX_PIN, GPS_TX_PIN);
-    Adafruit_GPS GPS(&mySerial);
-    // connect at 115200 so we can read the GPS fast enough and echo without dropping chars
-    Serial.begin(115200);
-    delay(5000);
-    // 9600 NMEA is the default baud rate for Adafruit MTK GPS's- this may need to be changed to 4800 if it doesn't work
-    GPS.begin(9600);
-    GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
-    // Set the update rate
-    GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);   // 1 Hz update rate
-    // delay of 1 second
-    delay(1000);
-
 static daq_GPSVehicleSpeed_t gpio_getGPSVehicleSpeed()
 {
     char c = GPS.read();
-    if ((c) && (GPSECHO))
-        Serial.write(c);
+    Serial.write(c);
 
     // if a sentence is received, we can check the checksum, parse it...
     if (GPS.newNMEAreceived()) {

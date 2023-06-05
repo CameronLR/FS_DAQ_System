@@ -11,7 +11,7 @@ typedef int32_t daq_Strain_t;
 typedef uint32_t daq_BatteryV_t;
 typedef int32_t daq_ThrottlePos_t;
 typedef int32_t daq_FuelPressure_t;
-typedef int32_t daq_GPSVehicleSpeed_t;
+typedef float32_t daq_GPSVehicleSpeed_t;
 
 typedef struct WheelSpeed_s
 {
