@@ -17,7 +17,9 @@
 
 #define GEAR_SHIFT_UP_PIN 31 //CTX3
 #define GEAR_SHIFT_DOWN_PIN 32 //OUT1B
-#define NEUTRAL_TIME_MS 300
+
+#define NEUTRAL_TIME_MS 250
+#define BUTTON_BOUNCE_THRESHOLD 150
 
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
@@ -35,16 +37,15 @@ static void gpio_engineRevInterrupt();
 volatile int revCount[SIZE_OF_CIRCLE_ARRAY];
 volatile int revPosition = 0;
 
-static void setGearUpStartTimeInterrupt();
 static void gearUpShiftInterrupt();
 static void gearDownShiftInterrupt();
 
 volatile daq_GearPos_t gearPosition = 0;
+volatile int lastGearUpdate = 0;
 volatile int gearUpBtnStartTime = 0;
 
 const int maxGear = 6;
 const int minGear = 0;
-
 
     void
     gpio_init()
@@ -57,9 +58,7 @@ const int minGear = 0;
   pinMode(GEAR_SHIFT_UP_PIN, INPUT_PULLUP);
   pinMode(GEAR_SHIFT_DOWN_PIN, INPUT_PULLUP);
 
-  attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),  setGearUpStartTimeInterrupt , FALLING);
-  attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, RISING);
-
+  attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
 
 }
@@ -158,33 +157,51 @@ static daq_FuelPressure_t gpio_getFuelPressure()
     return 0U;
 }
 
-
-
 static void gpio_engineRevInterrupt(){
     
     revCount[revPosition] = micros();
     revPosition = (revPosition+1) % SIZE_OF_CIRCLE_ARRAY;
 }
 
-//If the Falling interupt triggered on the shift up, then set the start time.
-static void setGearUpStartTimeInterrupt()
-{
-	gearUpBtnStartTime = millis();
-}
 
-//When Rising is triggered if its been less than NEUTRAL_TIME_MS since the falling interupt, then its in neutral
+//On a change of the Up pin if its been less than NEUTRAL_TIME_MS since the falling interupt, then its in neutral, 
 static void gearUpShiftInterrupt() 
 {
-	if (gearUpBtnStartTime - millis() < NEUTRAL_TIME_MS) {
+    int gearShiftUpPinState = digitalRead(GEAR_SHIFT_UP_PIN);
+
+    if (gearShiftUpPinState == 0) {
+
+        //It is FALLING interupt
+        gearUpBtnStartTime = millis();
+
+    } else {
+
+        //It is RISING interupt
+        if ((millis() - gearUpBtnStartTime) < NEUTRAL_TIME_MS && ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)) {
+        
+        lastGearUpdate = millis();
 		gearPosition = 0;
-	} else {
-	gearPosition = (gearPosition + 1 > maxGear) ? maxGear : gearPosition + 1;
-	}	
+        Serial.print(gearPosition);
+
+        } else if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
+        {
+            gearPosition = (gearPosition + 1 > maxGear) ? maxGear : gearPosition + 1;
+            lastGearUpdate = millis();
+            Serial.print(gearPosition);
+        } 
+    } 
 }
 
 //If falling detected then shift the gear down one
 static void gearDownShiftInterrupt()
 {
+
+    if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
+    {
     gearPosition = (gearPosition - 1 < minGear) ? minGear : gearPosition - 1;
+
+    Serial.print(gearPosition);
+    lastGearUpdate = millis();
+    }
 
 }
