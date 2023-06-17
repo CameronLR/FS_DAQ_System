@@ -167,3 +167,7 @@ class DataCollectorThread(QtCore.QThread):
             # extracted_data_list.append(datetime.datetime.fromtimestamp(int(serial_list[-2])/1000.0))
 
         return extracted_data_list
+    
+
+if __name__ == '__main__':
+    print("NOTE: Module should not be run as main")

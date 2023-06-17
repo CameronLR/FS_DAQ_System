@@ -50,15 +50,5 @@ class LiveWidget():
         else:
             print("ERROR: Invalid widget type")
 
-
-def main():
-    """
-    Starts instance of application GUI and runs application
-    """
-    qt_app = QtWidgets.QApplication(sys.argv)
-    gui = Gui()  # pylint: disable=W0612
-    sys.exit(qt_app.exec())
-
-
 if __name__ == '__main__':
-    main()
+    print("NOTE: Module should not be run as main")

@@ -12,10 +12,9 @@ import configparser
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtWidgets import QDialog
 
-
 from Live_Widget import LiveWidgetType
 
-CONFIG_FILE_NAME = "./Laptop/App/Config.ini"
+CONFIG_FILE_NAME = "./Config.ini"
 
 
 @dataclass
@@ -100,7 +99,6 @@ def save(settings: Settings):
         config.write(config_file)
 
 # Experimental settings modification code - Note: code does not properly work
-
 
 class SettingsPopUp(QDialog):
     def __init__(self, settings: Settings):
@@ -205,3 +203,7 @@ class ParameterSettingRow():
             max_value=self.max_value.toPlainText(),
             live_widget_type=str(self.live_widget_type.currentText()),
             unit_scale=1)
+
+
+if __name__ == '__main__':
+    print("NOTE: Module should not be run as main")

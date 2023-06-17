@@ -58,8 +58,6 @@ class Gui(QtWidgets.QMainWindow):
 
                 if count != self.nbr_data_points - 1:
                     graph.getAxis('bottom').setTicks([])
-                else:
-                    print(active_gui.label)
 
                 self.graph_widget.addItem(graph, active_graphs, 0)
 
@@ -71,6 +69,7 @@ class Gui(QtWidgets.QMainWindow):
             if active_gui.live_active:
                 live_widget = LiveWidget(LiveWidgetType.NUMERICAL, active_gui.label)
                 active_lives += 1
+                print(active_gui.label)
             else:
                 live_widget = None
 
@@ -79,25 +78,39 @@ class Gui(QtWidgets.QMainWindow):
 
         self.graph_widget.setBackground('w')
 
+
+
         # Currently only parameters up to 16 is properly supported
-        if active_lives < 10:
-            dimensions = 3
+        if active_lives > 12:
+            x_dimensions = 4
+            y_dimensions = 4
+        elif active_lives > 9:
+            x_dimensions = 4
+            y_dimensions = 3
         else:
-            dimensions = 4
+            x_dimensions = 3
+            y_dimensions = 3
+
+        print(f"x={x_dimensions},y={y_dimensions}")
 
         v_layout = QtWidgets.QVBoxLayout()
+
+       # remaining_spaces = (dimensions**2) - active_lives
+
+
         offset = 0
-        for x in range(dimensions):
+        for x in range(x_dimensions):
             h_layout = QtWidgets.QHBoxLayout()
-            for y in range(dimensions):
-                # print(f"x={x}, y={y}, offset={offset}, idx={x*dimensions+y+offset}")
-                if x*dimensions+y+offset >= len(self.live_objects):
+            
+            for y in range(y_dimensions):
+                print(f"x={x}, y={y}, offset={offset}, idx={x*x_dimensions+y+offset}")
+                if x*x_dimensions+y+offset >= len(self.live_objects):
                     continue
 
-                while (self.live_objects[x*dimensions+y+offset] is None):
+                while (self.live_objects[x*x_dimensions+y+offset] is None):
                     offset += 1
 
-                h_layout.addWidget(self.live_objects[x*dimensions+y+offset].widget)
+                h_layout.addWidget(self.live_objects[x*x_dimensions+y+offset].widget)
 
             v_layout.addLayout(h_layout)
 
@@ -193,51 +206,6 @@ class Gui(QtWidgets.QMainWindow):
         for count, active_gui in enumerate(self.settings.active_guis):
             if active_gui.live_active:
                 self.live_objects[count].update_value(self.data[count][-1])
-
-#################### Live Monitoring Widget Management ####################
-
-
-LIVE_WIDGET_LBL_FONT = QtGui.QFont("Arial", 28, QtGui.QFont.Bold)
-LIVE_WIDGET_VALUE_FONT = QtGui.QFont("Arial", 40, QtGui.QFont.Bold)
-
-
-class LiveWidget():
-    def __init__(self, widget_type, label):
-        self.widget_type = widget_type
-        self.value = None
-        self.widget = self.get_live_monitor_widget(widget_type, label)
-
-    def get_live_monitor_widget(self, widget_type, label):
-        if widget_type == LiveWidgetType.NUMERICAL:
-            return self.get_numerical_widget(label)
-
-        print("ERROR: Invalid widget type")
-
-    def get_numerical_widget(self, label):
-        frame = QtWidgets.QFrame()
-        frame.setFrameStyle(QtWidgets.QFrame.Panel | QtWidgets.QFrame.Raised)
-        layout = QtWidgets.QVBoxLayout()
-
-        label = QtWidgets.QLabel(label)
-        label.setAlignment(QtCore.Qt.AlignCenter)
-        label.setFont(LIVE_WIDGET_LBL_FONT)
-        self.value = QtWidgets.QLabel("0")
-        self.value.setAlignment(QtCore.Qt.AlignCenter)
-        self.value.setFont(LIVE_WIDGET_VALUE_FONT)
-
-        layout.addWidget(label)
-        layout.addWidget(self.value)
-
-        frame.setLayout(layout)
-
-        return frame
-
-    def update_value(self, value):
-        if self.widget_type == LiveWidgetType.NUMERICAL:
-            self.value.setText(str(value))
-        else:
-            print("ERROR: Invalid widget type")
-
 
 def main():
     """
