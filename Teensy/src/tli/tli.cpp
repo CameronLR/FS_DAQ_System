@@ -16,7 +16,7 @@
 #include "RF24.h"
 #include "nRF24L01.h" 
 
-#define CE_PIN 9 //Theese can be any
+#define CE_PIN 9    //Theese can be any - Prev was 7 and 8
 #define CSN_PIN 10 
 #define TX_BUFFER_SIZE 150
 
@@ -39,11 +39,11 @@ bool tli_init()
         return false;
     }
 
-    radio.setDataRate(RF24_250KBPS);           // greater = more distance
-    radio.setPALevel(RF24_PA_MAX);             // alternative is RF24_PA_LOW.
-    
-    radio.setPayloadSize(32);                  //32 byte packtes (default and largest possible)
+    //radio.setDataRate(RF24_250KBPS); //THIS MUST BE THE SAME ON BOTH SIDES
+
     radio.openWritingPipe(address);            //Set to TX
+    radio.setPALevel(RF24_PA_MIN);             // alternative is RF24_PA_LOW.
+    radio.setPayloadSize(32);                  //32 byte packtes (default and largest possible)
     radio.stopListening();
 
     return true;
@@ -53,7 +53,7 @@ bool tli_init()
 bool tli_sendData(sensorData_s *pSensorData)
 {
 
-    int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d\n", 
+    int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d\n", 
     pSensorData->wheelSpeed_mph.fr, 
     pSensorData->wheelSpeed_mph.rr, 
     pSensorData->wheelSpeed_mph.fl, 
@@ -71,6 +71,7 @@ bool tli_sendData(sensorData_s *pSensorData)
     pSensorData->batteryVoltage_dV, 
     pSensorData->throttlePos_mm, 
     pSensorData->fuelPressure_pa, 
+    pSensorData->time_ms,
     checksum);
 
     //Send i whole 32 byte chunks using the usedBufferSpace too calc i (could be a while loop)
@@ -81,8 +82,8 @@ bool tli_sendData(sensorData_s *pSensorData)
         radio.write(pTxBuffer + (32 * i), 32); 
     }
     
-    //Send anything remaining after the 32 byte chunks
-    radio.write(pTxBuffer + ((i + 1) * 32), txBufferSize % 32);
+    //Send anything remaining after the 32 byte chunks (1 has already been added to i)
+    radio.write(pTxBuffer + (32 * i), txBufferSize % 32);
 
     return true;
 } 
