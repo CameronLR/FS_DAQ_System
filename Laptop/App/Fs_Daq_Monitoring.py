@@ -78,8 +78,6 @@ class Gui(QtWidgets.QMainWindow):
 
         self.graph_widget.setBackground('w')
 
-
-
         # Currently only parameters up to 16 is properly supported
         if active_lives > 12:
             x_dimensions = 4
@@ -97,11 +95,10 @@ class Gui(QtWidgets.QMainWindow):
 
        # remaining_spaces = (dimensions**2) - active_lives
 
-
         offset = 0
         for x in range(x_dimensions):
             h_layout = QtWidgets.QHBoxLayout()
-            
+
             for y in range(y_dimensions):
                 print(f"x={x}, y={y}, offset={offset}, idx={x*x_dimensions+y+offset}")
                 if x*x_dimensions+y+offset >= len(self.live_objects):
@@ -185,7 +182,7 @@ class Gui(QtWidgets.QMainWindow):
         :param input_data: lis(str): processed data received from signal slot
         """
         # Store data
-        for i in range(self.nbr_data_points + 2):
+        for i in range(self.nbr_data_points + 1):  # Plus one to account for time input
             self.data[i].append(input_data[i])
 
         if self.tab_widget.currentIndex() == 0:
@@ -196,16 +193,17 @@ class Gui(QtWidgets.QMainWindow):
     def update_graphs(self):
         """Updates graph plots in live tab
         """
-        for count, active_gui in enumerate(self.settings.active_guis):
+        for count, active_gui in enumerate(self.settings.active_parameters):
             if active_gui.graph_active:
-                self.graph_plots[count][1].setData(y=self.data[count], x=self.data[FsDaqData.TIME])
+                self.graph_plots[count][1].setData(y=self.data[count], x=self.data[-1])
 
     def update_live(self):
         """Updates widgets in live tab
         """
-        for count, active_gui in enumerate(self.settings.active_guis):
+        for count, active_gui in enumerate(self.settings.active_parameters):
             if active_gui.live_active:
                 self.live_objects[count].update_value(self.data[count][-1])
+
 
 def main():
     """
