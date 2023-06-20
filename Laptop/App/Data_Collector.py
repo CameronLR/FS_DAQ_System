@@ -13,10 +13,12 @@ import serial
 
 from PySide6 import QtCore
 
+
 class CollectorStatus(int, Enum):
     """Enum representing the data collector's state"""
     RUNNING = 1
     STOPPED = 2
+
 
 class DataCollectorThread(QtCore.QThread):
     data_signal = QtCore.Signal(object)
@@ -30,7 +32,7 @@ class DataCollectorThread(QtCore.QThread):
         self.start_time = 0
 
         try:
-            self.serial = serial.Serial(settings.serial_port,settings.serial_baud, timeout=1)
+            self.serial = serial.Serial(settings.serial_port, settings.serial_baud, timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None
@@ -57,7 +59,6 @@ class DataCollectorThread(QtCore.QThread):
         self.set_serial_settings(settings.serial_port, settings.serial_baud)
 
         self.active_parameters = settings.active_guis
-
 
     def set_serial_settings(self, serial_port, serial_baud):
         """Set Serial Settings
@@ -107,7 +108,7 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_data = " "
 
-        while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None: 
+        while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None:
             serial_data = self.serial.readline()
 
             if serial_data is None:
@@ -150,24 +151,26 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_list = serial_data.split(",")
 
-        nbr_of_serial_parameters = len(self.active_parameters) + 1
+        # Time and CHECKSUM not included in active_parameters
+        nbr_of_serial_parameters = len(self.active_parameters) + 2
 
         if len(serial_list) != nbr_of_serial_parameters:
             print("ERROR: Invalid number of parameters "
-                 f"(Expected={len(serial_list)}, Actual={nbr_of_serial_parameters})")
+                  f"(Expected={len(serial_list)}, Actual={nbr_of_serial_parameters})")
             extracted_data_list = None
         else:
             extracted_data_list = []
 
             for parameter_idx, parameter in enumerate(serial_list[:-2]):
-                extracted_data_list.append(float(parameter) * self.active_parameters[parameter_idx].unit_scale)
+                # extracted_data_list.append(float(parameter) * self.active_parameters[parameter_idx].unit_scale)
+                extracted_data_list.append(float(parameter))
 
             extracted_data_list.append(int(serial_list[-2]))
 
             # extracted_data_list.append(datetime.datetime.fromtimestamp(int(serial_list[-2])/1000.0))
 
         return extracted_data_list
-    
+
 
 if __name__ == '__main__':
     print("NOTE: Module should not be run as main")
