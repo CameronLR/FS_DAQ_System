@@ -179,15 +179,13 @@ static void gearUpShiftInterrupt()
         //It is RISING interupt
         if ((millis() - gearUpBtnStartTime) < NEUTRAL_TIME_MS && ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)) {
         
-        lastGearUpdate = millis();
-		gearPosition = 0;
-        Serial.print(gearPosition);
+            lastGearUpdate = millis();
+		    gearPosition = 0;
 
         } else if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
         {
             gearPosition = (gearPosition + 1 > maxGear) ? maxGear : gearPosition + 1;
             lastGearUpdate = millis();
-            Serial.print(gearPosition);
         } 
     } 
 }
@@ -198,10 +196,9 @@ static void gearDownShiftInterrupt()
 
     if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
     {
-    gearPosition = (gearPosition - 1 < minGear) ? minGear : gearPosition - 1;
-
-    Serial.print(gearPosition);
-    lastGearUpdate = millis();
+        gearPosition = (gearPosition - 1 < minGear) ? minGear : gearPosition - 1;
+        lastGearUpdate = millis();
+        
     }
 
 }
