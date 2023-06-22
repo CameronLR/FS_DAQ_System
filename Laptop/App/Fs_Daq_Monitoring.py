@@ -22,96 +22,23 @@ __VERSION__ = "v1.0"
 
 class Gui(QtWidgets.QMainWindow):
     status_signal = QtCore.Signal(int)
+    settings_signal = QtCore.Signal(str)
 
     def __init__(self):
         super(Gui, self).__init__()
-
-        self.settings: Settings = Settings_Interface.load()
-
-        self.init_threads()
-
         self.setWindowTitle(f"FS DAQ Monitoring - {__VERSION__}")
 
+        self.settings: Settings = Settings_Interface.load()
+        self.serial_port = None
+
+        self.init_threads()
         self.init_tool_bar()
 
-        self.graph_plots = []
-        self.graph_widget = pyqtgraph.GraphicsLayoutWidget(show=True)
+        self.graph_widget = GraphPanel(self.settings.active_parameters)
+        self.live_widget = LivePanel(self.settings.active_parameters)
 
-        self.live_objects = []
-        self.live_widget = QtWidgets.QWidget()
-
-        self.nbr_data_points = len(self.settings.active_parameters)
+        self.nbr_data_points = len(self.settings.active_parameters) + 1  # Plus one to include time
         self.data = [[] for _ in range(self.nbr_data_points)]
-
-        active_lives = 0
-        active_graphs = 0
-
-        active_gui: ParameterSettings
-        for count, active_gui in enumerate(self.settings.active_parameters):
-            if active_gui.graph_active:
-                graph, plot = self.create_graph_widget(active_gui.label)
-                if count != 0:
-                    graph.setXLink(self.graph_plots[count-1][0])
-
-                # date_axis = pyqtgraph.DateAxisItem(orientation='bottom')
-                # graph.setAxisItems(axisItems={'bottom': date_axis})
-
-                if count != self.nbr_data_points - 1:
-                    graph.getAxis('bottom').setTicks([])
-
-                self.graph_widget.addItem(graph, active_graphs, 0)
-
-                active_graphs += 1
-
-            else:
-                graph, plot = None, None
-
-            if active_gui.live_active:
-                live_widget = LiveWidget(LiveWidgetType.NUMERICAL, active_gui.label)
-                active_lives += 1
-                print(active_gui.label)
-            else:
-                live_widget = None
-
-            self.graph_plots.append([graph, plot])
-            self.live_objects.append(live_widget)
-
-        self.graph_widget.setBackground('w')
-
-        # Currently only parameters up to 16 is properly supported
-        if active_lives > 12:
-            x_dimensions = 4
-            y_dimensions = 4
-        elif active_lives > 9:
-            x_dimensions = 4
-            y_dimensions = 3
-        else:
-            x_dimensions = 3
-            y_dimensions = 3
-
-        print(f"x={x_dimensions},y={y_dimensions}")
-
-        v_layout = QtWidgets.QVBoxLayout()
-
-       # remaining_spaces = (dimensions**2) - active_lives
-
-        offset = 0
-        for x in range(x_dimensions):
-            h_layout = QtWidgets.QHBoxLayout()
-
-            for y in range(y_dimensions):
-                print(f"x={x}, y={y}, offset={offset}, idx={x*x_dimensions+y+offset}")
-                if x*x_dimensions+y+offset >= len(self.live_objects):
-                    continue
-
-                while (self.live_objects[x*x_dimensions+y+offset] is None):
-                    offset += 1
-
-                h_layout.addWidget(self.live_objects[x*x_dimensions+y+offset].widget)
-
-            v_layout.addLayout(h_layout)
-
-        self.live_widget.setLayout(v_layout)
 
         self.tab_widget = QtWidgets.QTabWidget()
 
@@ -123,26 +50,15 @@ class Gui(QtWidgets.QMainWindow):
         self.showMaximized()
 
     def init_threads(self):
-        self.data_collection_thread = DataCollectorThread(self, self.settings)
-        self.status_signal.connect(self.data_collection_thread.status_signal_slot)
-        self.data_collection_thread.data_signal.connect(self.received_data)
-        self.data_collection_thread.start()
-
-    def create_graph_widget(self, label):
-        graph = pyqtgraph.PlotItem(axisItems={'bottom': pyqtgraph.DateAxisItem()})
-        plot = graph.plot([0], [0])
-
-        graph.setLabel("left", label)
-
-        return graph, plot
+        data_collection_thread = DataCollectorThread(self, self.settings)
+        self.status_signal.connect(data_collection_thread.status_signal_slot)
+        self.settings_signal.connect(data_collection_thread.settings_signal_slot)
+        data_collection_thread.data_signal.connect(self.received_data)
+        data_collection_thread.start()
 
     def init_tool_bar(self):
         tool_bar = QtWidgets.QToolBar()
         self.addToolBar(tool_bar)
-
-        # settings_btn = QtGui.QAction("Settings", self)
-        # settings_btn.triggered.connect(self.on_settings)
-        # tool_bar.addAction(settings_btn)
 
         stop_btn = QtGui.QAction("Stop", self)
         stop_btn.triggered.connect(self.on_stop_monitoring)
@@ -158,6 +74,7 @@ class Gui(QtWidgets.QMainWindow):
 
         self.serial_port_selector = QtWidgets.QComboBox()
         self.serial_port_selector.view().pressed.connect(self.populate_serial_combo)
+        self.serial_port_selector.currentTextChanged.connect(self.set_serial_port)
 
         self.populate_serial_combo()
 
@@ -167,6 +84,11 @@ class Gui(QtWidgets.QMainWindow):
         self.serial_port_selector.clear()
         for port, description, _ in sorted(serial.tools.list_ports.comports()):
             self.serial_port_selector.addItem(f"{port} - {description}")
+
+    def set_serial_port(self):
+        print("Changing serial port")
+        port, desc = str(self.serial_port_selector.currentText()).split(" - ")
+        self.settings_signal.emit(port)
 
     def on_start_monitoring(self):
         print("Starting monitoring")
@@ -182,20 +104,21 @@ class Gui(QtWidgets.QMainWindow):
         :param input_data: lis(str): processed data received from signal slot
         """
         # Store data
-        for i in range(self.nbr_data_points + 1):  # Plus one to account for time input
+        for i in range(self.nbr_data_points):
             self.data[i].append(input_data[i])
 
         if self.tab_widget.currentIndex() == 0:
-            self.update_graphs()
+            self.graph_widget.update_data(self.data)
         else:
             self.update_live()
 
     def update_graphs(self):
         """Updates graph plots in live tab
         """
-        for count, active_gui in enumerate(self.settings.active_parameters):
-            if active_gui.graph_active:
-                self.graph_plots[count][1].setData(y=self.data[count], x=self.data[-1])
+        for graph_idx, graph_plot in enumerate(self.graph_widget.graph_plots):
+            if graph_plot is not None:
+                graph_plot.setData(y=self.data[graph_idx], x=self.data[-1], color="blue")
+                # TODO Look at how easy it would be to have multiple plot in one graph (different colours)
 
     def update_live(self):
         """Updates widgets in live tab
@@ -203,6 +126,135 @@ class Gui(QtWidgets.QMainWindow):
         for count, active_gui in enumerate(self.settings.active_parameters):
             if active_gui.live_active:
                 self.live_objects[count].update_value(self.data[count][-1])
+
+
+class LivePanel(QtWidgets.QWidget):
+    def __init__(self, param_settings: list[ParameterSettings]):
+        super(LivePanel, self).__init__()
+
+        self.live_objects = []
+
+        live_idx = 0
+
+        for param_idx, param_setting in enumerate(param_settings):
+            if param_setting.live_active:
+                live_widget = LiveWidget(LiveWidgetType.NUMERICAL, param_setting.label)
+                live_idx += 1
+                print(param_setting.label)
+            else:
+                live_widget = None
+
+            self.live_objects.append(live_widget)
+
+        self.load_live_widgets(live_idx)
+
+    def load_live_widgets(self, nbr_live_widgets):
+        # Currently only parameters up to 16 is properly supported
+        if nbr_live_widgets > 12:
+            nbr_hrz_widgets = 4
+            nbr_vrt_widgets = 4
+        elif nbr_live_widgets > 9:
+            nbr_hrz_widgets = 4
+            nbr_vrt_widgets = 3
+        else:
+            nbr_hrz_widgets = 3
+            nbr_vrt_widgets = 3
+
+        v_layout = QtWidgets.QVBoxLayout()
+
+       # remaining_spaces = (dimensions**2) - active_lives
+
+        widget_idx_offset = 0
+
+        widget_idx = 0
+
+        for v_idx in range(nbr_vrt_widgets):
+            h_layout = QtWidgets.QHBoxLayout()
+
+            for h_idx in range(nbr_hrz_widgets):
+                # print(f"x={x}, y={y}, offset={offset}, idx={x*x_dimensions+y+offset}")
+
+                if widget_idx >= len(self.live_objects):
+                    widget_idx += 1
+                    print("IDX to big, " + len(self.live_objects))
+                    continue
+
+                while (self.live_objects[widget_idx] is None):
+                    widget_idx += 1
+                    print("Skipping")
+
+                print(self.live_objects[widget_idx].label)
+                print(widget_idx)
+
+                h_layout.addWidget(self.live_objects[widget_idx].widget)
+                widget_idx += 1
+
+            v_layout.addLayout(h_layout)
+
+        self.setLayout(v_layout)
+
+    def update_live(self, new_data):
+        """Updates widgets in live tab
+        """
+        live_plot: LiveWidget
+        for live_idx, live_plot in enumerate(self.live_objects):
+            if live_plot.live_active:
+                self.live_objects[live_idx].update_value(new_data[live_idx][-1])
+
+
+class GraphPanel(pyqtgraph.GraphicsLayoutWidget):
+    def __init__(self, param_settings: list[ParameterSettings]):
+        super(GraphPanel, self).__init__()
+
+        self.graph_plots = []
+
+        graph_idx = 0
+
+        previous_graph = None
+
+        pn = pyqtgraph.mkPen(color=(0, 0, 0), width=2)
+
+        for param_idx, param_setting in enumerate(param_settings):
+            if param_setting.graph_active:
+                graph, plot = self.create_graph_widget(param_setting.label)
+
+                if previous_graph is not None:
+                    graph.setXLink(previous_graph)
+                    previous_graph.getAxis('bottom').setTicks([])
+
+                # date_axis = pyqtgraph.DateAxisItem(orientation='bottom')
+                # graph.setAxisItems(axisItems={'bottom': date_axis})
+
+                self.addItem(graph, graph_idx, 0)
+
+                graph_idx += 1
+
+                graph.getAxis('left').setPen(pn)
+                graph.getAxis('bottom').setPen(pn)
+
+                previous_graph = graph
+
+            else:
+                graph, plot = None, None
+
+            self.graph_plots.append([graph, plot])
+
+        self.setBackground('w')
+
+    def create_graph_widget(self, label):
+        graph = pyqtgraph.PlotItem(axisItems={'bottom': pyqtgraph.DateAxisItem()})
+        plot = graph.plot([0], [0])
+
+        graph.setLabel("left", label)
+
+        return graph, plot
+
+    def update_data(self, new_data):
+        # TODO Add check that new data is not a bad size
+
+        for graph_idx, graph_plot in enumerate(self.graph_plots):
+            if graph_plot is not None:
+                graph_plot.setData(y=new_data[graph_idx], x=new_data[-1])
 
 
 def main():

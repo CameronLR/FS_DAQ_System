@@ -15,6 +15,7 @@ LIVE_WIDGET_VALUE_FONT = QtGui.QFont("Arial", 40, QtGui.QFont.Bold)
 
 class LiveWidget():
     def __init__(self, widget_type, label):
+        self.label = label
         self.widget_type = widget_type
         self.value = None
         self.widget = self.get_live_monitor_widget(widget_type, label)
@@ -27,7 +28,8 @@ class LiveWidget():
 
     def get_numerical_widget(self, label):
         frame = QtWidgets.QFrame()
-        frame.setFrameStyle(QtWidgets.QFrame.Panel | QtWidgets.QFrame.Raised)
+        frame.setFrameStyle(QtWidgets.QFrame.WinPanel | QtWidgets.QFrame.Raised)
+        frame.setLineWidth(4)
         layout = QtWidgets.QVBoxLayout()
 
         label = QtWidgets.QLabel(label)
@@ -49,6 +51,7 @@ class LiveWidget():
             self.value.setText(str(value))
         else:
             print("ERROR: Invalid widget type")
+
 
 if __name__ == '__main__':
     print("NOTE: Module should not be run as main")

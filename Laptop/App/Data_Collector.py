@@ -52,13 +52,15 @@ class DataCollectorThread(QtCore.QThread):
                 self.listen()
 
     @QtCore.Slot(str)
-    def set_settings(self, settings: Settings):
+    def settings_signal_slot(self, serial_port):
         """Qt Slot to set serial port of DataCollector
         :param settings: Settings: settings to set
         """
-        self.set_serial_settings(settings.serial_port, settings.serial_baud)
+        print(serial_port)
 
-        self.active_parameters = settings.active_guis
+        # self.set_serial_settings(settings.serial_port, settings.serial_baud)
+
+        # self.active_parameters = settings.active_guis
 
     def set_serial_settings(self, serial_port, serial_baud):
         """Set Serial Settings
@@ -108,6 +110,7 @@ class DataCollectorThread(QtCore.QThread):
         """
         serial_data = " "
 
+        # TODO Figure out why _overlapper_read isn't working for Ethan
         while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None:
             serial_data = self.serial.readline()
 
@@ -162,6 +165,7 @@ class DataCollectorThread(QtCore.QThread):
             extracted_data_list = []
 
             for parameter_idx, parameter in enumerate(serial_list[:-2]):
+                # TODO Implement scaling into settings
                 # extracted_data_list.append(float(parameter) * self.active_parameters[parameter_idx].unit_scale)
                 extracted_data_list.append(float(parameter))
 
