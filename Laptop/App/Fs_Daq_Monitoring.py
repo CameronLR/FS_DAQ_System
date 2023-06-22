@@ -60,6 +60,10 @@ class Gui(QtWidgets.QMainWindow):
         tool_bar = QtWidgets.QToolBar()
         self.addToolBar(tool_bar)
 
+        start_btn = QtGui.QAction("Settings", self)
+        start_btn.triggered.connect(self.on_settings)
+        tool_bar.addAction(start_btn)
+
         stop_btn = QtGui.QAction("Stop", self)
         stop_btn.triggered.connect(self.on_stop_monitoring)
         tool_bar.addAction(stop_btn)
@@ -97,6 +101,27 @@ class Gui(QtWidgets.QMainWindow):
     def on_stop_monitoring(self):
         print("Stopping monitoring")
         self.status_signal.emit(CollectorStatus.STOPPED)
+
+    def on_settings(self):
+        print("On Settings")
+        reload = True
+        new_settings = self.settings
+        while (1):
+            dlg = SettingsPopUp(new_settings)
+
+            if dlg.exec_():
+                new_settings = dlg.settings
+
+                if not dlg.reload:
+                    break
+            else:
+                new_settings = None
+                break
+
+        if new_settings is not None:
+            self.settings = new_settings
+
+        # Reload GUI
 
     @QtCore.Slot(object)
     def received_data(self, input_data):

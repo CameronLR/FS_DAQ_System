@@ -43,7 +43,7 @@ def load():
 
     config.read(CONFIG_FILE_NAME)
 
-    active_guis = []
+    active_parameters = []
 
     for thing in config['GRAPH.OVERVIEW']:
         idx = config['GRAPH.OVERVIEW'][thing]
@@ -58,18 +58,18 @@ def load():
         else:
             live_active = False
 
-        active_guis.append(ParameterSettings(graph_active=graph_active,
-                                             live_active=live_active,
-                                             label=config['GRAPH.'+idx]['LABEL'],
-                                             min_value=config['GRAPH.'+idx]['MIN_VALUE'],
-                                             max_value=config['GRAPH.'+idx]['MAX_VALUE'],
-                                             live_widget_type=config['GRAPH.'+idx]['LIVE_WIDGET_TYPE'],
-                                             unit_scale=1))
+        active_parameters.append(ParameterSettings(graph_active=graph_active,
+                                                   live_active=live_active,
+                                                   label=config['GRAPH.'+idx]['LABEL'],
+                                                   min_value=config['GRAPH.'+idx]['MIN_VALUE'],
+                                                   max_value=config['GRAPH.'+idx]['MAX_VALUE'],
+                                                   live_widget_type=config['GRAPH.'+idx]['LIVE_WIDGET_TYPE'],
+                                                   unit_scale=1))
 
     serial_port = config.get('SERIAL', 'PORT')
     serial_baud = config.get('SERIAL', 'BAUD')
 
-    return Settings(active_guis, serial_port, serial_baud)
+    return Settings(active_parameters, serial_port, serial_baud)
 
 
 def save(settings: Settings):
@@ -100,18 +100,20 @@ def save(settings: Settings):
 
 # Experimental settings modification code - Note: code does not properly work
 
+
 class SettingsPopUp(QDialog):
     def __init__(self, settings: Settings):
         super().__init__()
         self.setWindowTitle("Settings")
+        self.reload = False
 
         self.settings = copy.deepcopy(settings)
         self.graph_settings_line_list = []
 
-        self.dialog_layout = self.create_dialog_layout(settings.active_guis)
+        self.dialog_layout = self.create_dialog_layout(settings.active_parameters)
         self.setLayout(self.dialog_layout)
 
-    def create_dialog_layout(self, active_guis):
+    def create_dialog_layout(self, active_parameters):
         dialog_layout = QtWidgets.QVBoxLayout()
 
         grid_layout = QtWidgets.QGridLayout()
@@ -120,7 +122,7 @@ class SettingsPopUp(QDialog):
         dialog_layout.addWidget(message)
 
         self.graph_settings_line_list = []
-        for count, graph_data in enumerate(active_guis):
+        for count, graph_data in enumerate(active_parameters):
             graph_settings_line = ParameterSettingRow(self, count, graph_data)
             self.graph_settings_line_list.append(graph_settings_line)
 
@@ -147,17 +149,15 @@ class SettingsPopUp(QDialog):
         return dialog_layout
 
     def delete_item(self, idx):
-        self.settings.active_guis.pop(idx)
-        self.dialog_layout = None
-        self.dialog_layout = self.create_dialog_layout(self.settings.active_guis)
-        self.setLayout(self.dialog_layout)
-        print("INDEX ", idx, "\nDELETED ITEM - \n", self.settings.active_guis)
+        self.settings.active_parameters.pop(idx)
+        print("INDEX ", idx, "\nDELETED ITEM - \n", self.settings.active_parameters)
+        self.reload = True
+        self.accept()
 
     def add_new_item(self):
-        self.settings.active_guis.append(ParameterSettings(False, False, "", 0, 0, LiveWidgetType.NUMERICAL, 1))
-        self.dialog_layout = None
-        self.dialog_layout = self.create_dialog_layout(self.settings.active_guis)
-        self.setLayout(self.dialog_layout)
+        self.settings.active_parameters.append(ParameterSettings(False, False, "", 0, 0, LiveWidgetType.NUMERICAL, 1))
+        self.reload = True
+        self.accept()
 
     def create_settings(self):
         return Settings(active_parameters=[graph_settings.create_settings() for graph_settings in self.graph_settings_line_list],
