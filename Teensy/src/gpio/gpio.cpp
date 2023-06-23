@@ -164,19 +164,19 @@ static void gpio_engineRevInterrupt(){
 }
 
 
-//On a change of the Up pin if its been less than NEUTRAL_TIME_MS since the falling interupt, then its in neutral, 
+//On a change of the Up pin if its been less than NEUTRAL_TIME_MS since the RISING interupt, then its in neutral, 
 static void gearUpShiftInterrupt() 
 {
     int gearShiftUpPinState = digitalRead(GEAR_SHIFT_UP_PIN);
 
-    if (gearShiftUpPinState == 0) {
+    if (gearShiftUpPinState == 1) {
 
-        //It is FALLING interupt
+        //It is RISING interupt
         gearUpBtnStartTime = millis();
 
     } else {
 
-        //It is RISING interupt
+        //It is FALLING interupt
         if ((millis() - gearUpBtnStartTime) < NEUTRAL_TIME_MS && ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)) {
         
             lastGearUpdate = millis();
@@ -190,7 +190,7 @@ static void gearUpShiftInterrupt()
     } 
 }
 
-//If falling detected then shift the gear down one
+//If FALLING detected then shift the gear down one (when the button is released)
 static void gearDownShiftInterrupt()
 {
 
