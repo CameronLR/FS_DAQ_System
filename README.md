@@ -8,9 +8,8 @@ The DAQ system is made of 5 seperate parts -
 
 - Sensors
 - Teensy 4.1
-- Nano 2040 Connect
 - Display
-- Server
+- RF Module
 
 ## System's Interface
 
