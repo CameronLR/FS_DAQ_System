@@ -3,10 +3,9 @@
 @startuml
 
 Sensors -r-> [Teensy] : UART / SPI / I2C / ADC
-[Teensy] <-> [Nano] : SPI
-[Nano] -> [Server] : HTTPS
-[Server] -> Mechanic : HTTPS
-[Nano] -d-> [Display] : "UART"
+[Teensy] <-> [RF Module] : SPI
+[RF Module] -> Mechanic : SPI
+[Teensy] -d-> [Display] : "UART"
 [Display] -> Driver
 
 @enduml
