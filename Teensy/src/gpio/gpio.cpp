@@ -86,6 +86,7 @@ static daq_GearPos_t gpio_getGearPosition()
 #define Roll 0x3d
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
 {
+    // calculate steering wheel angle based on gyro
     float fAngle = sReg[Roll] / 32768.0f * 180.0f;
     return fAngle;
 }
