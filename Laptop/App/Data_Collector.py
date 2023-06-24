@@ -7,7 +7,7 @@
 import time
 from enum import Enum
 
-from Settings_Interface import Settings, ParameterSettings
+from .Settings_Interface import ParamDef
 
 import serial
 
@@ -23,16 +23,17 @@ class CollectorStatus(int, Enum):
 class DataCollectorThread(QtCore.QThread):
     data_signal = QtCore.Signal(object)
 
-    def __init__(self, parent, settings: Settings):
+    def __init__(self, parent, param_defs):
         super(DataCollectorThread, self).__init__(parent=parent)
         self.status = CollectorStatus.STOPPED
 
-        self.active_parameters: list[ParameterSettings] = settings.active_parameters
+        self.param_defs: list[ParamDef]
+        self.param_defs = param_defs
 
         self.start_time = 0
 
         try:
-            self.serial = serial.Serial(settings.serial_port, settings.serial_baud, timeout=1)
+            self.serial = serial.Serial("COM5", "115200", timeout=1)
         except serial.SerialException:
             print("ERROR: Could not open serial port")
             self.serial = None
