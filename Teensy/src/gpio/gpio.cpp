@@ -55,8 +55,8 @@ const int minGear = 0;
 
   //Initializing the pins for the electronic shifter
 
-  pinMode(GEAR_SHIFT_UP_PIN, INPUT_PULLUP);
-  pinMode(GEAR_SHIFT_DOWN_PIN, INPUT_PULLUP);
+  pinMode(GEAR_SHIFT_UP_PIN, INPUT_PULLDOWN);
+  pinMode(GEAR_SHIFT_DOWN_PIN, INPUT_PULLDOWN);
 
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
@@ -169,14 +169,14 @@ static void gearUpShiftInterrupt()
 {
     int gearShiftUpPinState = digitalRead(GEAR_SHIFT_UP_PIN);
 
-    if (gearShiftUpPinState == 1) {
+    if (gearShiftUpPinState == 1) { //If NO then make this 1
 
-        //It is RISING interupt
+        //It is FALLING interupt
         gearUpBtnStartTime = millis();
 
     } else {
 
-        //It is FALLING interupt
+        //It is RISING interupt
         if ((millis() - gearUpBtnStartTime) < NEUTRAL_TIME_MS && ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)) {
         
             lastGearUpdate = millis();
