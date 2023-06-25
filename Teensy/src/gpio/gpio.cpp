@@ -10,9 +10,16 @@
 
 #include <Arduino.h>
 #include "gpio.h"
+
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
 #define BATTERY_SENSOR_PIN A16
+
+#define GEAR_SHIFT_UP_PIN 31 //CTX3
+#define GEAR_SHIFT_DOWN_PIN 32 //OUT1B
+
+#define NEUTRAL_TIME_MS 250
+#define BUTTON_BOUNCE_THRESHOLD 150
 
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
@@ -30,11 +37,29 @@ static void gpio_engineRevInterrupt();
 volatile int revCount[SIZE_OF_CIRCLE_ARRAY];
 volatile int revPosition = 0;
 
+static void gearUpShiftInterrupt();
+static void gearDownShiftInterrupt();
+
+volatile daq_GearPos_t gearPosition = 0;
+volatile int lastGearUpdate = 0;
+volatile int gearUpBtnStartTime = 0;
+
+const int maxGear = 6;
+const int minGear = 0;
+
     void
     gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
+
+  //Initializing the pins for the electronic shifter
+
+  pinMode(GEAR_SHIFT_UP_PIN, INPUT_PULLDOWN);
+  pinMode(GEAR_SHIFT_DOWN_PIN, INPUT_PULLDOWN);
+
+  attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
 
 }
 
@@ -80,7 +105,18 @@ static DamperPos_S gpio_getDamperPosition()
 
 static daq_GearPos_t gpio_getGearPosition()
 {
-    return 0;
+    /**
+    * \return result - returns the int value of gear position
+    * \details
+    *         Gear 1, is when the car is fully shifted down
+    *         Neutral, is one shift up from gear 1
+    *         Gear 2, is a shift up from neutral
+    *         Gear 3, is a shift up from gear 2
+    *         
+    *         Max gear = 6.
+    */
+
+    return gearPosition;
 }
 
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
@@ -121,10 +157,48 @@ static daq_FuelPressure_t gpio_getFuelPressure()
     return 0U;
 }
 
-
-
 static void gpio_engineRevInterrupt(){
     
     revCount[revPosition] = micros();
     revPosition = (revPosition+1) % SIZE_OF_CIRCLE_ARRAY;
+}
+
+
+//On a change of the Up pin if its been less than NEUTRAL_TIME_MS since the RISING interupt, then its in neutral, 
+static void gearUpShiftInterrupt() 
+{
+    int gearShiftUpPinState = digitalRead(GEAR_SHIFT_UP_PIN);
+
+    if (gearShiftUpPinState == 1) { //If NO then make this 1
+
+        //It is FALLING interupt
+        gearUpBtnStartTime = millis();
+
+    } else {
+
+        //It is RISING interupt
+        if ((millis() - gearUpBtnStartTime) < NEUTRAL_TIME_MS && ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)) {
+        
+            lastGearUpdate = millis();
+		    gearPosition = 0;
+
+        } else if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
+        {
+            gearPosition = (gearPosition + 1 > maxGear) ? maxGear : gearPosition + 1;
+            lastGearUpdate = millis();
+        } 
+    } 
+}
+
+//If FALLING detected then shift the gear down one (when the button is released)
+static void gearDownShiftInterrupt()
+{
+
+    if ((millis() - lastGearUpdate) > BUTTON_BOUNCE_THRESHOLD)
+    {
+        gearPosition = (gearPosition - 1 < minGear) ? minGear : gearPosition - 1;
+        lastGearUpdate = millis();
+        
+    }
+
 }
