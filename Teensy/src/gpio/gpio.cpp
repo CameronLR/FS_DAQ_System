@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include "gpio.h"
+#include <REG.h>
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
 #define BATTERY_SENSOR_PIN A16
