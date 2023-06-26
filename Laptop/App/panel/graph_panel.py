@@ -4,61 +4,34 @@ sys.path.append("..") # Adds higher directory to python modules path.
 import pyqtgraph
 
 from ..Settings_Interface import ParamDef
+from ..widget.line_graph_widget import GraphWidget
+
 
 class GraphPanel(pyqtgraph.GraphicsLayoutWidget):
-    def __init__(self, param_settings: list[ParamDef]):
+    def __init__(self, param_idx_list: list[int]):
         super(GraphPanel, self).__init__()
 
-        self.graph_plots = []
+        self.setBackground("w")
 
-        graph_idx = 0
+        self.graph_list = []
 
         previous_graph = None
 
-        pn = pyqtgraph.mkPen(color=(0, 0, 0), width=2)
+        for active_params, active_params_idx in enumerate(param_idx_list):
 
-        for param_def in param_settings:
-            if param_def.display_graph:
-                graph, plot = self.create_graph_widget(param_def.name)
+            graph_widget = GraphWidget(active_params_idx, 0)
 
-                if previous_graph is not None:
-                    graph.setXLink(previous_graph)
-                    previous_graph.getAxis('bottom').setTicks([])
-
-                # date_axis = pyqtgraph.DateAxisItem(orientation='bottom')
-                # graph.setAxisItems(axisItems={'bottom': date_axis})
-
-                self.addItem(graph, graph_idx, 0)
-
-                graph_idx += 1
-
-                graph.getAxis('left').setPen(pn)
-                graph.getAxis('bottom').setPen(pn)
-
-                previous_graph = graph
-
-            else:
-                graph, plot = None, None
-
-            self.graph_plots.append([graph, plot])
-
-        self.setBackground('w')
-
-    def create_graph_widget(self, label):
-        graph = pyqtgraph.PlotItem(axisItems={'bottom': pyqtgraph.DateAxisItem()})
-        plot = graph.plot([0], [0])
-
-        graph.setLabel("left", label)
-
-        return graph, plot
+            if previous_graph is not None:
+                graph_widget.setXLink(previous_graph)
+                previous_graph.getAxis('bottom').setTicks([])
+            
+            previous_graph = graph_widget
+            self.addItem(graph_widget, active_params, 0)
+            self.graph_list.append(graph_widget)
 
     def update_data(self, new_data):
         # TODO Add check that new data is not a bad size
 
-        for graph_idx, graph_plot in enumerate(self.graph_plots):
-            if graph_plot is not None:
-                graph_plot.setData(y=new_data[graph_idx], x=new_data[-1], color="blue")
-                # TODO Look at how easy it would be to have multiple plot in one graph (different colours)
-
-
-
+        graph_widget: GraphWidget
+        for graph_widget in self.graph_list:
+            graph_widget.update_data(new_data)

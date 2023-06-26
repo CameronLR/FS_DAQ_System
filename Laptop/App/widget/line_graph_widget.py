@@ -2,64 +2,42 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtWidgets import QLabel
 import pyqtgraph
 
+from ..Settings_Interface import ParamDef, get_param_defs
+from ..dialog.param_select import select_param
+
 ## TODO Add support for multiple plots on one graph
 
-LIVE_WIDGET_VALUE_FONT = QtGui.QFont("Arial", 40, QtGui.QFont.Bold)
-
-class GraphWidget(QtWidgets.QWidget):
-    def __init__(self, label: str):
+class GraphWidget(pyqtgraph.PlotItem):
+    def __init__(self, param_idx, graph_type=None):
         super(GraphWidget, self).__init__()
 
-        v_layout = QtWidgets.QHBoxLayout()
+        param_defs = get_param_defs()
+        param_def: ParamDef = param_defs[param_idx]
 
-        # Create Label Widget
-        label_widget = HrzLabel(label)
+        self.setLabel("left", param_def.name)
+        vb = self.getViewBox()
+        vb.setBackgroundColor("w")
+        
+        pn = pyqtgraph.mkPen(color=(0, 0, 0), width=2)
+        self.getAxis('left').setPen(pn)
+        self.getAxis('bottom').setPen(pn)
 
-        # Create Graph Widget
-        graph_widget = pyqtgraph.PlotWidget()
-        self.plot_data = graph_widget.plot([0],[0])
-        graph_widget.setBackground("w")
-
-        # Create Live Data Widget
-        self.current_value = QtWidgets.QLabel("0")
-        self.current_value.setAlignment(QtCore.Qt.AlignCenter)
-        self.current_value.setFont(LIVE_WIDGET_VALUE_FONT)
-
-        v_layout.addWidget(label_widget)
-        v_layout.addWidget(graph_widget)
-        v_layout.addWidget(self.current_value)
-
-        self.setLayout(v_layout)
-
+        self.plot_data = self.plot([0],[0])
 
     def update_data(self, new_data, time_data):
         # Update Live Graph
         self.plot_data.setData(y=new_data, x=time_data)
+    
+    def mousePressEvent(self, event):
+        if event.button() != QtCore.Qt.RightButton:
+            return
 
-        # Update Live Value
-        self.current_value.setText(str(new_data[-1]))
+        new_param_idx = select_param(self)
 
+        if new_param_idx is not None:
+            ## Change param
+            param_defs = get_param_defs()
+            print(f"@Change param to {param_defs[new_param_idx].name}")
 
-
-class HrzLabel(QLabel):
-    def __init__(self, *args):
-        QLabel.__init__(self, *args)
-
-    # def paintEvent(self, event):
-    #     pass
-    #     painter = QtGui.QPainter(self)
-    #     painter.setPen(QtCore.Qt.black)
-    #     painter.translate(20, 100)
-    #     painter.rotate(-90)
-    #     painter.drawText(0, 0, "hellos")
-    #     painter.end()
-
-    #     pass
-    #     print("Paint Event")
-    #     QLabel.paintEvent(self, event)
-    #     painter = QtGui.QPainter (self)
-    #     painter.translate(0, self.height()-1)
-    #     painter.rotate(-90)
-    #     self.setGeometry(self.x(), self.y(), self.height(), self.width())
-    #     painter.end
-    #     QLabel.render(self, painter)
+            self.setLabel("left", param_defs[new_param_idx].name)
+            self.plot([0], [0])

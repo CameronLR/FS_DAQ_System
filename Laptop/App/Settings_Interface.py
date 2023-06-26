@@ -11,6 +11,9 @@ import traceback
 
 CONFIG_FILE_NAME = "./Config.ini"
 
+global g_param_defs
+g_param_defs = None
+
 @dataclass
 class ParamDef:
     name: str
@@ -54,6 +57,14 @@ def load():
             print(f"Invalid paramater ({param_idx_str})\n{traceback.format_exc()}")
 
     return param_defs
+
+def set_param_defs(new_param_defs):
+    global g_param_defs
+    g_param_defs = new_param_defs
+
+def get_param_defs():
+    return g_param_defs
+
 
 ######### Function not supported anymore #############
 # def save(settings: Settings):

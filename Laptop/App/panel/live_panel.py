@@ -7,16 +7,16 @@ from ..widget.live_widget import LiveWidget, LiveWidgetType
 from ..Settings_Interface import ParamDef
 
 class LivePanel(QtWidgets.QWidget):
-    def __init__(self, param_settings: list[ParamDef]):
+    def __init__(self, param_defs: list[ParamDef]):
         super(LivePanel, self).__init__()
 
         self.live_objects = []
 
         live_idx = 0
 
-        for param_setting in param_settings:
+        for param_idx, param_setting in enumerate(param_defs):
             if param_setting.display_live:
-                live_widget = LiveWidget(LiveWidgetType.NUMERICAL, param_setting.name)
+                live_widget = LiveWidget(param_idx)
                 live_idx += 1
             else:
                 live_widget = None

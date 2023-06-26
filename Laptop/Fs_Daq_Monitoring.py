@@ -31,6 +31,7 @@ class Gui(QtWidgets.QMainWindow):
 
         # Initilise settings and data storage
         self.param_defs: list[ParamDef] = App.Settings_Interface.load()
+        App.Settings_Interface.set_param_defs(self.param_defs)
         self.serial_port = None
         
         self.nbr_data_points = len(self.param_defs) + 1  # Plus one to include time

@@ -3,6 +3,9 @@
 from enum import Enum
 from PySide6 import QtCore, QtWidgets, QtGui
 
+from ..dialog.param_select import select_param
+from ..Settings_Interface import get_param_defs, ParamDef
+
 
 class LiveWidgetType(str, Enum):
     """Enum representing all the options for live monitoring widgets"""
@@ -14,41 +17,50 @@ LIVE_WIDGET_VALUE_FONT = QtGui.QFont("Arial", 40, QtGui.QFont.Bold)
 
 
 class LiveWidget(QtWidgets.QFrame):
-    def __init__(self, widget_type, label):
+    def __init__(self, param_idx):
         super(LiveWidget, self).__init__()
-        self.label = label
-        self.widget_type = widget_type
-        self.value = None
-        self.get_live_monitor_widget(widget_type, label)
+        self.param_defs = get_param_defs()
 
-    def get_live_monitor_widget(self, widget_type, label):
-        if widget_type == LiveWidgetType.NUMERICAL:
-            return self.get_numerical_widget(label)
-
-        print("ERROR: Invalid widget type")
-
-    def get_numerical_widget(self, label):
         self.setFrameStyle(QtWidgets.QFrame.WinPanel | QtWidgets.QFrame.Raised)
         self.setLineWidth(4)
+
         layout = QtWidgets.QVBoxLayout()
 
-        label = QtWidgets.QLabel(label)
-        label.setAlignment(QtCore.Qt.AlignCenter)
-        label.setFont(LIVE_WIDGET_LBL_FONT)
+        self.label = QtWidgets.QLabel(self.param_defs[param_idx].name)
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setFont(LIVE_WIDGET_LBL_FONT)
+
         self.value = QtWidgets.QLabel("0")
         self.value.setAlignment(QtCore.Qt.AlignCenter)
         self.value.setFont(LIVE_WIDGET_VALUE_FONT)
 
-        layout.addWidget(label)
+        layout.addWidget(self.label)
         layout.addWidget(self.value)
 
         self.setLayout(layout)
 
     def update_value(self, value):
-        if self.widget_type == LiveWidgetType.NUMERICAL:
-            self.value.setText(str(value))
-        else:
-            print("ERROR: Invalid widget type")
+        self.value.setText(str(value))
+            
+    def mousePressEvent(self, event):
+        print("TRYING TO OPEN DIALOG")
+        new_param_idx = select_param(self)
+        print("HEY")
+
+        if new_param_idx is not None:
+            ## Change param
+            param_defs = get_param_defs()
+            print(f"@Change param to {param_defs[new_param_idx].name}")
+
+            self.label.setText(param_defs[new_param_idx].name)
+            
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
