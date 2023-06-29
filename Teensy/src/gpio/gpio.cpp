@@ -88,10 +88,15 @@ static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
     return 0;
 }
 
+#define GX 0x37
+float fGyro[3];
 static GyroData_s gpio_getGyro()
 {
-    // gpio_gyro info will likely be retrieved from Arduino Nano
-    GyroData_s gyro = {};
+    for(int i = 0; i < 3; i++){
+        fGyro[i] = GX+i / 32768.0f * 2000.0f;
+        fGyro[i] = (int32_t)fGyro[i];
+    }
+    GyroData_s gyro = {fGyro[1], fGyro[2], fGyro[3]};   
     return gyro;
 }
 
