@@ -5,30 +5,18 @@
 #
 ################################################################################
 
-from dataclasses import dataclass
 import configparser
 import traceback
 
+from .param_def import ParamDef
+
 CONFIG_FILE_NAME = "./Config.ini"
-
-global g_param_defs
-g_param_defs = None
-
-@dataclass
-class ParamDef:
-    name: str
-    unit: str
-    variants: list[str]
-    display_graph: bool
-    display_live: bool
-    low_value: float
-    high_value: float
 
 def is_true(string_value):
     return (string_value == "1")
 
 def parse_variant_string(string_value):
-    return None
+    return string_value.split(",")
 
 def load():
     """Load settings located in config file
@@ -57,14 +45,6 @@ def load():
             print(f"Invalid paramater ({param_idx_str})\n{traceback.format_exc()}")
 
     return param_defs
-
-def set_param_defs(new_param_defs):
-    global g_param_defs
-    g_param_defs = new_param_defs
-
-def get_param_defs():
-    return g_param_defs
-
 
 ######### Function not supported anymore #############
 # def save(settings: Settings):

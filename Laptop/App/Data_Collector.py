@@ -5,6 +5,7 @@
 #
 ################################################################################
 import time
+import random
 from enum import Enum
 
 from .Settings_Interface import ParamDef
@@ -12,7 +13,6 @@ from .Settings_Interface import ParamDef
 import serial
 
 from PySide6 import QtCore
-
 
 class CollectorStatus(int, Enum):
     """Enum representing the data collector's state"""
@@ -23,9 +23,13 @@ class CollectorStatus(int, Enum):
 class DataCollectorThread(QtCore.QThread):
     data_signal = QtCore.Signal(object)
 
-    def __init__(self, parent, param_defs):
+    def __init__(self, parent, param_defs, dummy_data_enabled: bool):
         super(DataCollectorThread, self).__init__(parent=parent)
+        self.dummy_data_enabled = dummy_data_enabled
         self.status = CollectorStatus.STOPPED
+
+        self.start_time = int(time.time())
+        self.last_time = int(time.time())
 
         self.param_defs: list[ParamDef]
         self.param_defs = param_defs
@@ -51,6 +55,7 @@ class DataCollectorThread(QtCore.QThread):
                 time.sleep(0.5)
             else:
                 self.listen()
+                time.sleep(0.1)
 
     @QtCore.Slot(str)
     def settings_signal_slot(self, serial_port):
@@ -106,22 +111,36 @@ class DataCollectorThread(QtCore.QThread):
             print("ERROR: Invalid status")
             self.status = CollectorStatus.STOPPED
 
+    def generate_dummy_data(self):
+        dummy_data = []
+
+        for param_def in self.param_defs:
+            dummy_data.append(float(random.randint(0,100)))
+
+        dummy_data.append(float(self.last_time - self.start_time))
+
+        return dummy_data
+
     def listen(self):
         """ Keeps processing and posting serial data until serial port is free
         """
         serial_data = " "
 
-        # TODO Figure out why _overlapper_read isn't working for Ethan
-        while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None:
-            serial_data = self.serial.readline()
+        if self.dummy_data_enabled and (self.last_time != int(time.time())):
+            self.last_time = int(time.time())
+            self.data_signal.emit(self.generate_dummy_data())
+        else:
+            # TODO Figure out why _overlapper_read isn't working for Ethan
+            while self.serial is not None and self.serial.is_open and self.serial._overlapped_read is not None:
+                serial_data = self.serial.readline()
 
-            if serial_data is None:
-                break
+                if serial_data is None:
+                    break
 
-            processed_data = self.process_serial_data(serial_data)
+                processed_data = self.process_serial_data(serial_data)
 
-            if processed_data is not None:
-                self.data_signal.emit(processed_data)
+                if processed_data is not None:
+                    self.data_signal.emit(processed_data)
 
     def process_serial_data(self, serial_data):
         """Process serial data

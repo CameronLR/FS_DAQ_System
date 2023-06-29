@@ -28,9 +28,9 @@ class MainTabPanel(QtWidgets.QTabWidget):
         self.addTab(self.live_widget, "Live View")
 
     def update_data(self, new_data):
-        if self.tab_widget.currentIndex() == 0:
+        if self.currentIndex() == 0:
             self.mixed_widget.update_data(new_data)
-        elif self.tab_widget.currentIndex() == 1:
+        elif self.currentIndex() == 1:
             self.graph_widget.update_data(new_data)
         else:
             self.live_widget.update_data(new_data)

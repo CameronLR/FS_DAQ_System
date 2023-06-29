@@ -1,6 +1,6 @@
 from PySide6 import QtGui, QtWidgets
 
-from ..Settings_Interface import get_param_defs, ParamDef
+from ..param_def import ParamDef, get_param_defs
 
 class ParamSelectDialog(QtWidgets.QDialog):
     def __init__(self, parent=None, param_defs=None):

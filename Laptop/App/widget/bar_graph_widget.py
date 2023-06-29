@@ -1,7 +1,7 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 import pyqtgraph
 
-from ..Settings_Interface import ParamDef, get_param_defs
+from ..param_def import ParamDef, get_param_def, get_param_defs
 from ..dialog.param_select import select_param
 
 BAR_GRAPH_LBL_FONT = QtGui.QFont("Arial", 14, QtGui.QFont.Bold)
@@ -13,8 +13,7 @@ class BarGraph(QtWidgets.QWidget):
 
         self.param_idx = param_idx
         
-        param_defs = get_param_defs()
-        param_def: ParamDef = param_defs[param_idx]
+        param_def = get_param_def(param_idx)
 
         v_layout = QtWidgets.QVBoxLayout()
 
@@ -28,6 +27,7 @@ class BarGraph(QtWidgets.QWidget):
         plot.setBackground("w")
         plot.setMaximumWidth(100)
         plot.setLabels(right=' ')
+        plot.setYRange(min=0, max=100)
         layout.addWidget(plot, alignment=QtCore.Qt.AlignCenter)
         container1.setLayout(layout)
 
@@ -60,8 +60,9 @@ class BarGraph(QtWidgets.QWidget):
         self.setLayout(v_layout)
     
     def update_value(self, new_data):
-        self.current_value.setText(str(new_data[self.param_idx]))
-        self.bar_graph.setOpts(x = 0, height = new_data[self.param_idx], width = 0.01)
+        param_data = new_data[self.param_idx]
+        self.current_value.setText(str(param_data[-1]))
+        self.bar_graph.setOpts(x = 0, height = param_data[-1], width = 0.01)
 
     def mousePressEvent(self, event):
         new_param_idx = select_param(self)

@@ -2,7 +2,7 @@ from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtWidgets import QLabel
 import pyqtgraph
 
-from ..Settings_Interface import ParamDef, get_param_defs
+from ..param_def import ParamDef, get_param_def, get_param_defs
 from ..dialog.param_select import select_param
 
 ## TODO Add support for multiple plots on one graph
@@ -11,8 +11,9 @@ class GraphWidget(pyqtgraph.PlotItem):
     def __init__(self, param_idx, graph_type=None):
         super(GraphWidget, self).__init__()
 
-        param_defs = get_param_defs()
-        param_def: ParamDef = param_defs[param_idx]
+        self.param_idx = param_idx
+
+        param_def = get_param_def(param_idx)
 
         self.setLabel("left", param_def.name)
         vb = self.getViewBox()
@@ -24,12 +25,12 @@ class GraphWidget(pyqtgraph.PlotItem):
 
         self.plot_data = self.plot([0],[0])
 
-    def update_data(self, new_data, time_data):
+    def update_data(self, new_data):
         # Update Live Graph
-        self.plot_data.setData(y=new_data, x=time_data)
+        self.plot_data.setData(y=new_data[self.param_idx], x=new_data[-1])
     
     def mousePressEvent(self, event):
-        if event.button() != QtCore.Qt.RightButton:
+        if event.button() != QtCore.Qt.RightButton: # Only accept right clicks to allow pyqtgraph movement
             return
 
         new_param_idx = select_param(self)

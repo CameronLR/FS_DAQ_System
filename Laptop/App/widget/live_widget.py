@@ -4,7 +4,7 @@ from enum import Enum
 from PySide6 import QtCore, QtWidgets, QtGui
 
 from ..dialog.param_select import select_param
-from ..Settings_Interface import get_param_defs, ParamDef
+from ..param_def import ParamDef, get_param_def, get_param_defs
 
 
 class LiveWidgetType(str, Enum):
@@ -19,14 +19,15 @@ LIVE_WIDGET_VALUE_FONT = QtGui.QFont("Arial", 40, QtGui.QFont.Bold)
 class LiveWidget(QtWidgets.QFrame):
     def __init__(self, param_idx):
         super(LiveWidget, self).__init__()
-        self.param_defs = get_param_defs()
+        self.param_idx = param_idx
+        self.param_def = get_param_def(param_idx)
 
         self.setFrameStyle(QtWidgets.QFrame.WinPanel | QtWidgets.QFrame.Raised)
         self.setLineWidth(4)
 
         layout = QtWidgets.QVBoxLayout()
 
-        self.label = QtWidgets.QLabel(self.param_defs[param_idx].name)
+        self.label = QtWidgets.QLabel(self.param_def.name)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setFont(LIVE_WIDGET_LBL_FONT)
 
@@ -39,8 +40,10 @@ class LiveWidget(QtWidgets.QFrame):
 
         self.setLayout(layout)
 
-    def update_value(self, value):
-        self.value.setText(str(value))
+    def update_value(self, new_data):
+        param_data = new_data[self.param_idx]
+        param_current_value = param_data[-1]
+        self.value.setText(str(param_current_value))
             
     def mousePressEvent(self, event):
         print("TRYING TO OPEN DIALOG")
@@ -53,6 +56,7 @@ class LiveWidget(QtWidgets.QFrame):
             print(f"@Change param to {param_defs[new_param_idx].name}")
 
             self.label.setText(param_defs[new_param_idx].name)
+            self.value.setText("0.0")
             
 
 

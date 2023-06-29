@@ -16,7 +16,7 @@ from App.panel.main_tab_panel import MainTabPanel
 
 from App.Data_Collector import DataCollectorThread, CollectorStatus
 import App.Settings_Interface
-from App.Settings_Interface import ParamDef
+from App.param_def import ParamDef, get_param_def, set_param_defs
 
 
 __VERSION__ = "v1.0"
@@ -31,7 +31,7 @@ class Gui(QtWidgets.QMainWindow):
 
         # Initilise settings and data storage
         self.param_defs: list[ParamDef] = App.Settings_Interface.load()
-        App.Settings_Interface.set_param_defs(self.param_defs)
+        set_param_defs(self.param_defs)
         self.serial_port = None
         
         self.nbr_data_points = len(self.param_defs) + 1  # Plus one to include time
@@ -46,7 +46,7 @@ class Gui(QtWidgets.QMainWindow):
         self.showMaximized()
 
     def init_threads(self):
-        data_collection_thread = DataCollectorThread(self, self.param_defs)
+        data_collection_thread = DataCollectorThread(self, self.param_defs, True)
         self.status_signal.connect(data_collection_thread.status_signal_slot)
         self.settings_signal.connect(data_collection_thread.settings_signal_slot)
         data_collection_thread.data_signal.connect(self.received_data)

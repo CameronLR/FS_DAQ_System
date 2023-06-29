@@ -75,6 +75,5 @@ class LivePanel(QtWidgets.QWidget):
         """
         live_plot: LiveWidget
         for live_idx, live_plot in enumerate(self.live_objects):
-            if live_plot.live_active:
-                self.live_objects[live_idx].update_value(new_data[live_idx][-1])
-
+            if live_plot is not None:
+                self.live_objects[live_idx].update_value(new_data)

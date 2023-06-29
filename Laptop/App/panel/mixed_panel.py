@@ -42,19 +42,24 @@ class BarGraphPanel(QtWidgets.QWidget):
         
         h_layout = QtWidgets.QHBoxLayout()
         
-        bar1 = BarGraph(0)
-        bar3 = BarGraph(1)
-        bar2 = BarGraph(2)
+        self.bar1 = BarGraph(0)
+        self.bar3 = BarGraph(1)
+        self.bar2 = BarGraph(2)
 
-        h_layout.addWidget(bar1)
-        h_layout.addWidget(bar2)
-        h_layout.addWidget(bar3)
+        h_layout.addWidget(self.bar1)
+        h_layout.addWidget(self.bar2)
+        h_layout.addWidget(self.bar3)
         
 
         h_layout.setSpacing(0)
         h_layout.addStretch(1)
 
         self.setLayout(h_layout)
+
+    def update_data(self, new_data):
+        self.bar1.update_value(new_data)
+        self.bar2.update_value(new_data)
+        self.bar3.update_value(new_data)
 
 
 
@@ -66,15 +71,20 @@ class LiveInfoPanel(QtWidgets.QWidget):
 
         h_layout = QtWidgets.QHBoxLayout()
 
-        widget1 = LiveWidget(0)
-        widget2 = LiveWidget(1)
-        widget3 = LiveWidget(2)
+        self.widget1 = LiveWidget(0)
+        self.widget2 = LiveWidget(1)
+        self.widget3 = LiveWidget(2)
 
 
 
-        h_layout.addWidget(widget1)
-        h_layout.addWidget(widget2)
-        h_layout.addWidget(widget3)
+        h_layout.addWidget(self.widget1)
+        h_layout.addWidget(self.widget2)
+        h_layout.addWidget(self.widget3)
 
         self.setLayout(h_layout)
+
+    def update_data(self, new_data):
+        self.widget1.update_value(new_data)
+        self.widget2.update_value(new_data)
+        self.widget3.update_value(new_data)
 
