@@ -6,7 +6,7 @@
 typedef int32_t daq_EngineRev_t;
 typedef int32_t daq_DamperPos_t;
 typedef int32_t daq_GearPos_t;
-typedef float32_t daq_SteeringWhlPos_t;
+typedef int32_t daq_SteeringWhlPos_t;
 typedef int32_t daq_Strain_t;
 typedef uint32_t daq_BatteryV_t;
 typedef int32_t daq_ThrottlePos_t;
