@@ -9,6 +9,10 @@
  */
 
 #include <Arduino.h>
+#include <Wire.h>
+#include "Teensy/lib/REG.h"
+#include "Teensy/lib/wit_c_sdk.h"
+#include "Teensy/lib/wit_c_sdk.c"
 #include "gpio.h"
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
@@ -35,6 +39,15 @@ volatile int revPosition = 0;
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
+
+    Wire.begin();
+    Wire.setClock(400000);
+	WitInit(WIT_PROTOCOL_I2C, 0x50);
+	WitI2cFuncRegister(IICwriteBytes, IICreadBytes);
+	WitRegisterCallBack(CopeSensorData);
+    WitDelayMsRegister(Delayms);
+	Serial.print("\r\n********************** wit-motion IIC example  ************************\r\n");
+	AutoScanSensor();
 
 }
 
@@ -83,13 +96,13 @@ static daq_GearPos_t gpio_getGearPosition()
     return 0;
 }
 
-#define Roll 0x3d
 static daq_SteeringWhlPos_t gpio_getSteeringWheelPosition()
 {
     // calculate steering wheel angle based on gyro
-    float fAngle = Roll / 32768.0f * 180.0f;
-    fAngle = (int32_t)fAngle;
-    return fAngle;
+    WitReadReg(AX, 12);
+    float strWhlAngle_deg = sReg[Roll+2] / 32768.0f * 180.0f;   // Get Z axis angle (this might need to change depending on position of module)
+    strWhlAngle_deg = (int32_t)strWhlAngle_deg;
+    return strWhlAngle_deg;
 }
 
 static GyroData_s gpio_getGyro()

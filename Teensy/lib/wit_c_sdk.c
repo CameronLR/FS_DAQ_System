@@ -1,4 +1,5 @@
 #include "wit_c_sdk.h"
+#include <Wire.h>
 
 static SerialWrite p_WitSerialWriteFunc = NULL;
 static WitI2cWrite p_WitI2cWriteFunc = NULL;
@@ -11,10 +12,21 @@ static uint8_t s_ucAddr = 0xff;
 static uint8_t s_ucWitDataBuff[WIT_DATA_BUFF_SIZE];
 static uint32_t s_uiWitDataCnt = 0, s_uiProtoclo = 0, s_uiReadRegIndex = 0;
 int16_t sReg[REGSIZE];
-
+static void AutoScanSensor(void);
+static void CopeSensorData(uint32_t uiReg, uint32_t uiRegNum);   
+static int32_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t *data, uint32_t length);
+static int32_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t* data, uint32_t length);
+static void Delayms(uint16_t ucMs);
 
 #define FuncW 0x06
 #define FuncR 0x03
+
+#define ACC_UPDATE		0x01
+#define GYRO_UPDATE		0x02
+#define ANGLE_UPDATE	0x04
+#define MAG_UPDATE		0x08
+#define READ_UPDATE		0x80
+static char s_cDataUpdate = 0;
 
 static const uint8_t __auchCRCHi[256] = {
     0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81,
@@ -498,5 +510,101 @@ int32_t WitSetContent(int32_t uiRsw)
 	return WIT_HAL_OK;
 }
 
+static int32_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t *data, uint32_t length)
+{
+	// int val;
+    // Wire.beginTransmission(dev);
+    // Wire.write(reg);
+    // Wire.endTransmission(false); //endTransmission but keep the connection active
 
+    // val = Wire.requestFrom(dev, length); //Ask for bytes, once done, bus is released by default
 
+	// if(val == 0)return 0;
+    // while(Wire.available() < length) //Hang out until we get the # of bytes we expect
+    // {
+    //   if(Wire.getWireTimeoutFlag())
+    //   {
+    //     Wire.clearWireTimeoutFlag();
+    //     return 0;
+    //   }
+    // }
+
+    // for(int x = 0 ; x < length ; x++)    data[x] = Wire.read();   
+
+    return 1;
+}
+
+static int32_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t* data, uint32_t length)
+{
+    // Wire.beginTransmission(dev);
+    // Wire.write(reg);
+    // Wire.write(data, length);
+    // if(Wire.getWireTimeoutFlag())
+    // {
+    //   Wire.clearWireTimeoutFlag();
+    //   return 0;
+    // }
+    // Wire.endTransmission(); //Stop transmitting
+
+    return 1; 
+}
+
+static void CopeSensorData(uint32_t uiReg, uint32_t uiRegNum)
+{
+	int i;
+    for(i = 0; i < uiRegNum; i++)
+    {
+        switch(uiReg)
+        {
+            case AZ:
+				s_cDataUpdate |= ACC_UPDATE;
+            break;
+            case GZ:
+				s_cDataUpdate |= GYRO_UPDATE;
+            break;
+            case HZ:
+				s_cDataUpdate |= MAG_UPDATE;
+            break;
+            case Yaw:
+				s_cDataUpdate |= ANGLE_UPDATE;
+            break;
+            default:
+				s_cDataUpdate |= READ_UPDATE;
+			break;
+        }
+		uiReg++;
+    }
+}
+
+static void AutoScanSensor(void)
+{
+	int i, iRetry;
+	
+	for(i = 0; i < 0x7F; i++)
+	{
+		WitInit(WIT_PROTOCOL_I2C, i);
+		iRetry = 2;
+		do
+		{
+			s_cDataUpdate = 0;
+			WitReadReg(AX, 3);
+			delay(5);
+			if(s_cDataUpdate != 0)
+			{
+				Serial.print("find 0x");
+				Serial.print(i, HEX);
+				Serial.print(" addr sensor\r\n");
+				// ShowHelp();
+				return ;
+			}
+			iRetry--;
+		}while(iRetry);		
+	}
+	Serial.print("can not find sensor\r\n");
+	Serial.print("please check your connection\r\n");
+}
+
+static void Delayms(uint16_t ucMs)
+{
+  delay(ucMs);
+}
