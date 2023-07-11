@@ -512,14 +512,14 @@ int32_t WitSetContent(int32_t uiRsw)
 
 static int32_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t *data, uint32_t length)
 {
-	// int val;
-    // Wire.beginTransmission(dev);
-    // Wire.write(reg);
-    // Wire.endTransmission(false); //endTransmission but keep the connection active
+	int val;
+    Wire.beginTransmission(dev);
+    Wire.write(reg);
+    Wire.endTransmission(false); //endTransmission but keep the connection active
 
-    // val = Wire.requestFrom(dev, length); //Ask for bytes, once done, bus is released by default
+    val = Wire.requestFrom(dev, length); //Ask for bytes, once done, bus is released by default
 
-	// if(val == 0)return 0;
+	if(val == 0)return 0;
     // while(Wire.available() < length) //Hang out until we get the # of bytes we expect
     // {
     //   if(Wire.getWireTimeoutFlag())
@@ -529,22 +529,22 @@ static int32_t IICreadBytes(uint8_t dev, uint8_t reg, uint8_t *data, uint32_t le
     //   }
     // }
 
-    // for(int x = 0 ; x < length ; x++)    data[x] = Wire.read();   
+    for(int x = 0 ; x < length ; x++)    data[x] = Wire.read();   
 
     return 1;
 }
 
 static int32_t IICwriteBytes(uint8_t dev, uint8_t reg, uint8_t* data, uint32_t length)
 {
-    // Wire.beginTransmission(dev);
-    // Wire.write(reg);
-    // Wire.write(data, length);
+    Wire.beginTransmission(dev);
+    Wire.write(reg);
+    Wire.write(data, length);
     // if(Wire.getWireTimeoutFlag())
     // {
     //   Wire.clearWireTimeoutFlag();
     //   return 0;
     // }
-    // Wire.endTransmission(); //Stop transmitting
+    Wire.endTransmission(); //Stop transmitting
 
     return 1; 
 }
