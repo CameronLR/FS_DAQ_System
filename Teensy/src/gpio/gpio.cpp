@@ -89,6 +89,11 @@ void gpio_init()
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
 
+  // Interrupts for wheel speed sensor
+  attachInterrupt(digitalPinToInterrupt(FR_WHEEL_SENSOR_PIN), frWheelInterrupt, HIGH);
+  attachInterrupt(digitalPinToInterrupt(FL_WHEEL_SENSOR_PIN), flWheelInterrupt, HIGH);
+  attachInterrupt(digitalPinToInterrupt(RR_WHEEL_SENSOR_PIN), rrWheelInterrupt, HIGH);
+  attachInterrupt(digitalPinToInterrupt(RL_WHEEL_SENSOR_PIN), rlWheelInterrupt, HIGH);
 }
 
 bool updateSensorInfo(sensorData_s *pSensorData)
