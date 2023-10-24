@@ -60,7 +60,7 @@ static void rlWheelInterrupt();
 
 const float wheelDiameter = 0.3; // meters (needs changing)
 const float wheelCircumference = 3.14159265359 * wheelDiameter;
-#define MS_TO_MPH(speed) (speed * 2.23694); 
+#define MUS_TO_MPH(speed) (speed * 2.237e+6); 
 #define WHEEL_COUNT_SIZE 8 // Number of points on gear
 
 volatile int frWheelCount[WHEEL_COUNT_SIZE];
@@ -137,23 +137,26 @@ static void rlWheelInterrupt()
 
 static int32_t calcWheelRev(int wheelPosition, volatile int wheelCount[WHEEL_COUNT_SIZE])
 {
-    // Finds latest timedelta measurement
-    int end = wheelCount[(wheelPosition + WHEEL_COUNT_SIZE-1) % WHEEL_COUNT_SIZE];
+    int end = wheelCount[(wheelPosition + WHEEL_COUNT_SIZE - 1) % WHEEL_COUNT_SIZE];
     // Finds oldest time delta measurement
-    int start = wheelCount[wheelPosition];
+    int start = wheelCount[wheelPosition % WHEEL_COUNT_SIZE];
 
-    // Calculates time period of 1 revolution in seconds
-    float revPeriod = (end - start) / (WHEEL_COUNT_SIZE-1) / 1000000;
+    // Calculates time period of 1 revolution in micro seconds
+    float revPeriod = (end - start);
 
-    // So we get the amount of time for 1 rev, do 1/elapsedTime to get it in Hz. Then mulitply by 60 to get in rpm.
+    // To get the frequency we do 1/period
     float rps = (1.0f / revPeriod);
 
-    // Converts m/s to MPH
-    float wheelSpeed = MS_TO_MPH(rps * wheelCircumference); 
-    // Converts it to an integer 
-    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000.0f);
+    // Converts m/us to MPH
+    float wheelSpeed = MUS_TO_MPH(rps * wheelCircumference);
+    // Converts it to an integer
+    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000);
 
-    return wheelSpeedInt;
+    if (wheelSpeedInt < 0) {
+        return 0;
+    } else {
+        return wheelSpeedInt;
+    }
 }
 
 
