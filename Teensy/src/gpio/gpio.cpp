@@ -21,6 +21,11 @@
 #define NEUTRAL_TIME_MS 250
 #define BUTTON_BOUNCE_THRESHOLD 150
 
+#define FR_WHEEL_SENSOR_PIN 2
+#define FL_WHEEL_SENSOR_PIN 3
+#define RR_WHEEL_SENSOR_PIN 4
+#define RL_WHEEL_SENSOR_PIN 5
+
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
 static DamperPos_S gpio_getDamperPosition();
@@ -47,8 +52,31 @@ volatile int gearUpBtnStartTime = 0;
 const int maxGear = 6;
 const int minGear = 0;
 
-    void
-    gpio_init()
+// Wheel speed constants
+static void frWheelInterrupt();
+static void flWheelInterrupt();
+static void rrWheelInterrupt();
+static void rlWheelInterrupt();
+
+const float wheelDiameter = 0.3; // meters (needs changing)
+const float wheelCircumference = 3.14159265359 * wheelDiameter;
+#define MUS_TO_MPH(speed) (speed * 2.237e+6); 
+#define WHEEL_COUNT_SIZE 8 // Number of points on gear
+
+volatile int frWheelCount[WHEEL_COUNT_SIZE];
+volatile int frWheelPosition;
+
+volatile int flWheelCount[WHEEL_COUNT_SIZE];
+volatile int flWheelPosition;
+
+volatile int rrWheelCount[WHEEL_COUNT_SIZE];
+volatile int rrWheelPosition;
+
+volatile int rlWheelCount[WHEEL_COUNT_SIZE];
+volatile int rlWheelPosition;
+
+
+void gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
