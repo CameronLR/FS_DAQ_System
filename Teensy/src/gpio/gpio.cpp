@@ -158,7 +158,18 @@ static int32_t calcWheelRev(int wheelPosition, volatile int wheelCount[WHEEL_COU
 
 static WheelSpeed_s gpio_getWheelSpeed()
 {
-    WheelSpeed_s wheelSpeed = {};
+    // Calculate rpm for each wheel
+    int32_t frRevs = calcWheelRev(frWheelPosition, frWheelCount);
+    int32_t flRevs = calcWheelRev(flWheelPosition, flWheelCount);
+    int32_t rrRevs = calcWheelRev(rrWheelPosition, rrWheelCount);
+    int32_t rlRevs = calcWheelRev(rlWheelPosition, rlWheelCount);
+
+    WheelSpeed_s wheelSpeed = {
+        frRevs, // Front Right
+        flRevs, // Front Left
+        rrRevs, // Rear Right
+        rlRevs, // Rear Left
+    };
     return wheelSpeed;
 }
 
