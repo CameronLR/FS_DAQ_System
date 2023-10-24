@@ -132,6 +132,29 @@ static void rlWheelInterrupt()
     rlWheelPosition = (rlWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
 }
 
+static int32_t calcWheelRev(int wheelPosition, volatile int wheelCount[WHEEL_COUNT_SIZE])
+{
+    int end = wheelCount[(wheelPosition + WHEEL_COUNT_SIZE - 1) % WHEEL_COUNT_SIZE];
+    // Finds oldest time delta measurement
+    int start = wheelCount[wheelPosition % WHEEL_COUNT_SIZE];
+
+    // Calculates time period of 1 revolution in micro seconds
+    float revPeriod = (end - start);
+
+    // To get the frequency we do 1/period
+    float rps = (1.0f / revPeriod);
+
+    // Converts m/us to MPH
+    float wheelSpeed = MUS_TO_MPH(rps * wheelCircumference);
+    // Converts it to an integer
+    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000);
+
+    if (wheelSpeedInt < 0) {
+        return 0;
+    } else {
+        return wheelSpeedInt;
+    }
+}
 
 static WheelSpeed_s gpio_getWheelSpeed()
 {
