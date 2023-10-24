@@ -60,9 +60,8 @@ static void rlWheelInterrupt();
 
 const float wheelDiameter = 0.3; // meters (needs changing)
 const float wheelCircumference = 3.14159265359 * wheelDiameter;
-const int wheelRotationGranularity = 8;
-#define MS_TO_MPH(speed) (speed * 2.23694);
-#define WHEEL_COUNT_SIZE 20
+#define MS_TO_MPH(speed) (speed * 2.23694); 
+#define WHEEL_COUNT_SIZE 8 // Number of points on gear
 
 volatile int frWheelCount[WHEEL_COUNT_SIZE];
 volatile int frWheelPosition;
@@ -82,7 +81,7 @@ void gpio_init()
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
 
-  //Initializing the pins for the electronic shifter
+  // Initializing the pins for the electronic shifter
 
   pinMode(GEAR_SHIFT_UP_PIN, INPUT_PULLDOWN);
   pinMode(GEAR_SHIFT_DOWN_PIN, INPUT_PULLDOWN);
@@ -115,60 +114,62 @@ bool updateSensorInfo(sensorData_s *pSensorData)
 }
 
 
-static void frWheelInterrupt() {
-        frWheelCount[frWheelPosition] = micros();
-        frWheelPosition = (frWheelPosition+1) % wheelRotationGranularity;
+static void frWheelInterrupt()
+{
+    frWheelCount[frWheelPosition] = micros(); // Time delta to array
+    frWheelPosition = (frWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
 }
-static void flWheelInterrupt() {
-        flWheelCount[flWheelPosition] = micros();
-        flWheelPosition = (flWheelPosition+1) % wheelRotationGranularity;
+static void flWheelInterrupt()
+{
+    flWheelCount[flWheelPosition] = micros(); // Time delta to array
+    flWheelPosition = (flWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
 }
-static void rrWheelInterrupt() {
-        rrWheelCount[rrWheelPosition] = micros();
-        rrWheelPosition = (rrWheelPosition+1) % wheelRotationGranularity;
+static void rrWheelInterrupt()
+{
+    rrWheelCount[rrWheelPosition] = micros(); // Time delta to array
+    rrWheelPosition = (rrWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
 }
-static void rlWheelInterrupt() {
-        rlWheelCount[rlWheelPosition] = micros();
-        rlWheelPosition = (rlWheelPosition+1) % wheelRotationGranularity;
+static void rlWheelInterrupt()
+{
+    rlWheelCount[rlWheelPosition] = micros(); // Time delta to array
+    rlWheelPosition = (rlWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
 }
 
-static int calcWheelRev(int wheelPosition, volatile int wheelCount[WHEEL_COUNT_SIZE])
+static int32_t calcWheelRev(int wheelPosition, volatile int wheelCount[WHEEL_COUNT_SIZE])
 {
+    // Finds latest timedelta measurement
     int end = wheelCount[(wheelPosition + WHEEL_COUNT_SIZE-1) % WHEEL_COUNT_SIZE];
+    // Finds oldest time delta measurement
     int start = wheelCount[wheelPosition];
 
-    float timePerRev = (float)(end - start) / (WHEEL_COUNT_SIZE-1) / 1000000.0;
+    // Calculates time period of 1 revolution in seconds
+    float revPeriod = (end - start) / (WHEEL_COUNT_SIZE-1) / 1000000;
 
     // So we get the amount of time for 1 rev, do 1/elapsedTime to get it in Hz. Then mulitply by 60 to get in rpm.
-    int32_t rpm = (int32_t)((1.0 / timePerRev) * 2.0 * 60.0);
+    float rps = (1.0f / revPeriod);
 
-    return rpm;
-}
-
-static int calcWheelSpeed(int sensorCount, float timeDelta) 
-{
-    float revolutions = sensorCount / wheelRotationGranularity;
-    float revsPerSeconds = revolutions / timeDelta;
-    float wheelSpeed = MS_TO_MPH(revsPerSeconds * wheelCircumference);
-    int wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000);
+    // Converts m/s to MPH
+    float wheelSpeed = MS_TO_MPH(rps * wheelCircumference); 
+    // Converts it to an integer 
+    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000.0f);
 
     return wheelSpeedInt;
 }
 
+
 static WheelSpeed_s gpio_getWheelSpeed()
 {
-    int frCount = calcWheelRev(frWheelPosition, frWheelCount);
-    int flCount = calcWheelRev(flWheelPosition, flWheelCount);;
-    int rrCount = calcWheelRev(rrWheelPosition, rrWheelCount);;
-    int rlCount = calcWheelRev(rlWheelPosition, rlWheelCount);;
-
-    float timeDelta = 0.15;
+    // Calculate rpm for each wheel
+    int32_t frRevs = calcWheelRev(frWheelPosition, frWheelCount);
+    int32_t flRevs = calcWheelRev(flWheelPosition, flWheelCount);
+    int32_t rrRevs = calcWheelRev(rrWheelPosition, rrWheelCount);
+    int32_t rlRevs = calcWheelRev(rlWheelPosition, rlWheelCount);
 
     WheelSpeed_s wheelSpeed = {
-        calcWheelSpeed(frCount, timeDelta), // Front Right
-        calcWheelSpeed(flCount, timeDelta), // Front Left
-        calcWheelSpeed(rrCount, timeDelta), // Rear Right
-        calcWheelSpeed(rlCount, timeDelta), // Rear Left
+        frRevs, // Front Right
+        flRevs, // Front Left
+        rrRevs, // Rear Right
+        rlRevs, // Rear Left
     };
     return wheelSpeed;
 }
