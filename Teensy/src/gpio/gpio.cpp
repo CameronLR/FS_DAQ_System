@@ -111,6 +111,28 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     return false;
 }
 
+static void frWheelInterrupt()
+{
+    frWheelCount[frWheelPosition] = micros(); // Time delta to array
+    frWheelPosition = (frWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
+}
+static void flWheelInterrupt()
+{
+    flWheelCount[flWheelPosition] = micros(); // Time delta to array
+    flWheelPosition = (flWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
+}
+static void rrWheelInterrupt()
+{
+    rrWheelCount[rrWheelPosition] = micros(); // Time delta to array
+    rrWheelPosition = (rrWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
+}
+static void rlWheelInterrupt()
+{
+    rlWheelCount[rlWheelPosition] = micros(); // Time delta to array
+    rlWheelPosition = (rlWheelPosition+1) % WHEEL_COUNT_SIZE; // Increments current position
+}
+
+
 static WheelSpeed_s gpio_getWheelSpeed()
 {
     WheelSpeed_s wheelSpeed = {};
