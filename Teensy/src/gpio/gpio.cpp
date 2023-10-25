@@ -67,8 +67,9 @@ volatile int frWheelCounter;
 volatile int flWheelCounter;
 volatile int rrWheelCounter;
 volatile int rlWheelCounter;
-volatile int everyOtherCounter;
-volatile WheelSpeed_s previousWheelSpeed = {};
+volatile int gtime_ms;
+volatile int previousWheelRecord;
+WheelSpeed_s previousWheelSpeed = {};
 
 
 void gpio_init()
@@ -103,6 +104,7 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
     pSensorData->fuelPressure_pa = gpio_getFuelPressure();
     pSensorData->time_ms = millis();
+    gtime_ms = pSensorData->time_ms;
     return false;
 }
 
@@ -143,7 +145,7 @@ static int32_t calcWheelRev(volatile int *wheelCount)
 static WheelSpeed_s gpio_getWheelSpeed()
 {
     WheelSpeed_s wheelSpeed;
-    if (everyOtherCounter == 1) {
+    if ((gtime_ms-previousWheelRecord) >= 1000) {
         // Calculate rpm for each wheel
         int32_t frRevs = calcWheelRev(&frWheelCounter);
         int32_t flRevs = calcWheelRev(&flWheelCounter);
@@ -160,7 +162,7 @@ static WheelSpeed_s gpio_getWheelSpeed()
         previousWheelSpeed.fl = wheelSpeed.fl;
         previousWheelSpeed.rr = wheelSpeed.rr;
         previousWheelSpeed.rl = wheelSpeed.rl;
-        everyOtherCounter = 0;
+        previousWheelRecord = gtime_ms;
     } else {
         wheelSpeed = {
             previousWheelSpeed.fr,
@@ -168,7 +170,6 @@ static WheelSpeed_s gpio_getWheelSpeed()
             previousWheelSpeed.rr,
             previousWheelSpeed.rl,
         };
-        everyOtherCounter = 1;
     }
     return wheelSpeed;
 }
