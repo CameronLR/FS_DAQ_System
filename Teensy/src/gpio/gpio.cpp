@@ -136,7 +136,7 @@ static int32_t calcWheelRev(volatile int *wheelCount)
     // Converts m/us to MPH
     float wheelSpeed = MS_TO_MPH(rps * wheelCircumference);
     // Converts it to an integer
-    int32_t wheelSpeedInt = round(static_cast<double>(wheelSpeed));
+    int32_t wheelSpeedInt = static_cast<int32_t>(round(wheelSpeed));
     *wheelCount = 0;
     if (wheelSpeedInt < 0) {
         return static_cast<int32_t>(0);
