@@ -60,7 +60,7 @@ static void rlWheelInterrupt();
 
 const float wheelDiameter = 0.3; // meters (needs changing)
 const float wheelCircumference = 3.14159265359 * wheelDiameter;
-#define MUS_TO_MPH(speed) (speed * 2.237); 
+#define MS_TO_MPH(speed) (speed * 2.237); 
 #define WHEEL_COUNT_SIZE 8 // Number of points on gear
 
 volatile int frWheelCounter;
@@ -133,9 +133,9 @@ static int32_t calcWheelRev(volatile int *wheelCount)
     float rps = *wheelCount / WHEEL_COUNT_SIZE / interval;
 
     // Converts m/us to MPH
-    float wheelSpeed = MUS_TO_MPH(rps * wheelCircumference);
+    float wheelSpeed = MS_TO_MPH(rps * wheelCircumference);
     // Converts it to an integer
-    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed * 1000.0f);
+    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed);
     *wheelCount = 0;
     if (wheelSpeedInt < 0) {
         return static_cast<int32_t>(0);
