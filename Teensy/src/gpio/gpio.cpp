@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include "gpio.h"
+#include <cmath>
 
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
@@ -135,7 +136,7 @@ static int32_t calcWheelRev(volatile int *wheelCount)
     // Converts m/us to MPH
     float wheelSpeed = MS_TO_MPH(rps * wheelCircumference);
     // Converts it to an integer
-    int32_t wheelSpeedInt = static_cast<int32_t>(wheelSpeed);
+    int32_t wheelSpeedInt = round(static_cast<double>(wheelSpeed));
     *wheelCount = 0;
     if (wheelSpeedInt < 0) {
         return static_cast<int32_t>(0);
@@ -147,7 +148,7 @@ static int32_t calcWheelRev(volatile int *wheelCount)
 static WheelSpeed_s gpio_getWheelSpeed()
 {
     WheelSpeed_s wheelSpeed;
-    if ((gtime_ms-previousWheelRecord) >= 1000) {
+    if ((gtime_ms-previousWheelRecord) >= 500) {
         // Calculate rpm for each wheel
         int32_t frRevs = calcWheelRev(&frWheelCounter);
         int32_t flRevs = calcWheelRev(&flWheelCounter);
