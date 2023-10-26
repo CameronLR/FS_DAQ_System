@@ -69,7 +69,7 @@ volatile int rrWheelCounter;
 volatile int rlWheelCounter;
 volatile int gtime_ms;
 volatile int previousWheelRecord;
-WheelSpeed_s previousWheelSpeed = {};
+volatile WheelSpeed_s previousWheelSpeed = {0,0,0,0};
 
 
 void gpio_init()
@@ -127,8 +127,10 @@ static void rlWheelInterrupt()
 
 static int32_t calcWheelRev(volatile int *wheelCount)
 {
+    // Get interval in seconds
+    float interval = (gtime_ms - previousWheelRecord) / 1000;
     // Calculates revolutions per second
-    float rps = *wheelCount / WHEEL_COUNT_SIZE;
+    float rps = *wheelCount / WHEEL_COUNT_SIZE / interval;
 
     // Converts m/us to MPH
     float wheelSpeed = MUS_TO_MPH(rps * wheelCircumference);
