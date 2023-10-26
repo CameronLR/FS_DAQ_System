@@ -60,7 +60,7 @@ static void rlWheelInterrupt();
 
 const float wheelDiameter = 0.3; // meters (needs changing)
 const float wheelCircumference = 3.14159265359 * wheelDiameter;
-#define MUS_TO_MPH(speed) (speed * 2.237e+6f); 
+#define MUS_TO_MPH(speed) (speed * 2.237); 
 #define WHEEL_COUNT_SIZE 8 // Number of points on gear
 
 volatile int frWheelCounter;
