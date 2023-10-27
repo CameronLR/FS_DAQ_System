@@ -72,6 +72,9 @@ volatile int gtime_ms;
 volatile int previousWheelRecord;
 volatile WheelSpeed_s previousWheelSpeed = {0,0,0,0};
 
+// Sensor Update Periods
+#define WHEEL_SPEED_UPDATE_PERIOD 500
+
 
 void gpio_init()
 {
@@ -148,7 +151,7 @@ static int32_t calcWheelRev(volatile int *wheelCount)
 static WheelSpeed_s gpio_getWheelSpeed()
 {
     WheelSpeed_s wheelSpeed;
-    if ((gtime_ms-previousWheelRecord) >= 500) {
+    if ((gtime_ms-previousWheelRecord) >= WHEEL_SPEED_UPDATE_PERIOD) {
         // Calculate rpm for each wheel
         int32_t frRevs = calcWheelRev(&frWheelCounter);
         int32_t flRevs = calcWheelRev(&flWheelCounter);
