@@ -9,9 +9,9 @@
  */
 
 #include <Arduino.h>
+#include <math.h>
 #include "gpio.h"
 
-#define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
 #define BATTERY_SENSOR_PIN A16
 
@@ -34,8 +34,10 @@ static daq_FuelPressure_t gpio_getFuelPressure();
 static void gpio_engineRevInterrupt();
 
 // Keeps track of the amount of revs between each call of updateSensorInfo
-volatile int revCount[SIZE_OF_CIRCLE_ARRAY];
-volatile int revPosition = 0;
+volatile int revCount = 0;
+volatile int32_t lastRev = 0;
+volatile int lastRevTime = 0;
+volatile int gtime_ms = 0;
 
 static void gearUpShiftInterrupt();
 static void gearDownShiftInterrupt();
@@ -47,8 +49,10 @@ volatile int gearUpBtnStartTime = 0;
 const int maxGear = 6;
 const int minGear = 0;
 
-    void
-    gpio_init()
+#define ENGINE_REV_UPDATE_PERIOD 500
+
+
+void gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
@@ -75,6 +79,7 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
     pSensorData->fuelPressure_pa = gpio_getFuelPressure();
     pSensorData->time_ms = millis();
+    gtime_ms = pSensorData->time_ms;
     return false;
 }
 
@@ -86,15 +91,17 @@ static WheelSpeed_s gpio_getWheelSpeed()
 
 static daq_EngineRev_t gpio_getEngineRevs()
 {
-    int end = revCount[(revPosition +SIZE_OF_CIRCLE_ARRAY -1) % SIZE_OF_CIRCLE_ARRAY];
-    int start = revCount[revPosition];
+    if ((gtime_ms - lastRevTime) >= ENGINE_REV_UPDATE_PERIOD) {
+        float rpms = revCount / (gtime_ms - lastRevTime) / 2;
+        int32_t rpm = static_cast<int32_t>(round(rpms)) * 1000;
+        lastRev = rpm;
+        revCount = 0;
+        return rpm;
 
-    float timePerRev = (float)(end - start) / (SIZE_OF_CIRCLE_ARRAY-1) / 1000000.0;
+    } else {
+        return lastRev;
+    }
 
-    // So we get the amount of time for 1 rev, do 1/elapsedTime to get it in Hz. Then mulitply by 60 to get in rpm.
-    int32_t rpm = (int32_t)((1.0 / timePerRev) * 2.0 * 60.0);
-
-    return rpm;
 }
 
 static DamperPos_S gpio_getDamperPosition()
@@ -158,9 +165,7 @@ static daq_FuelPressure_t gpio_getFuelPressure()
 }
 
 static void gpio_engineRevInterrupt(){
-    
-    revCount[revPosition] = micros();
-    revPosition = (revPosition+1) % SIZE_OF_CIRCLE_ARRAY;
+    revCount++;
 }
 
 
