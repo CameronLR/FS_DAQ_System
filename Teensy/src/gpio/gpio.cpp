@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include "gpio.h"
+#include <math.h>
 
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
@@ -20,6 +21,11 @@
 
 #define NEUTRAL_TIME_MS 250
 #define BUTTON_BOUNCE_THRESHOLD 150
+
+#define FR_WHEEL_SENSOR_PIN 2
+#define FL_WHEEL_SENSOR_PIN 3
+#define RR_WHEEL_SENSOR_PIN 4
+#define RL_WHEEL_SENSOR_PIN 5
 
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
@@ -47,8 +53,30 @@ volatile int gearUpBtnStartTime = 0;
 const int maxGear = 6;
 const int minGear = 0;
 
-    void
-    gpio_init()
+// Wheel speed constants
+static void frWheelInterrupt();
+static void flWheelInterrupt();
+static void rrWheelInterrupt();
+static void rlWheelInterrupt();
+
+const float wheelDiameter = 0.3; // meters (needs changing)
+const float wheelCircumference = 3.14159265359 * wheelDiameter;
+#define MS_TO_MPH(speed) (speed * 2.237); 
+#define WHEEL_COUNT_SIZE 8 // Number of points on gear
+
+volatile int frWheelCounter;
+volatile int flWheelCounter;
+volatile int rrWheelCounter;
+volatile int rlWheelCounter;
+volatile int gtime_ms;
+volatile int previousWheelRecord;
+volatile WheelSpeed_s previousWheelSpeed = {0,0,0,0};
+
+// Sensor Update Periods
+#define WHEEL_SPEED_UPDATE_PERIOD 500
+
+
+void gpio_init()
 {
   // This it the interrupt to help read the rev counter, pin A9 
   attachInterrupt( digitalPinToInterrupt(REV_SENSOR_PIN), gpio_engineRevInterrupt, RISING);
@@ -61,6 +89,11 @@ const int minGear = 0;
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
   attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
 
+  // Interrupts for wheel speed sensor
+  attachInterrupt(digitalPinToInterrupt(FR_WHEEL_SENSOR_PIN), frWheelInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(FL_WHEEL_SENSOR_PIN), flWheelInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(RR_WHEEL_SENSOR_PIN), rrWheelInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(RL_WHEEL_SENSOR_PIN), rlWheelInterrupt, RISING);
 }
 
 bool updateSensorInfo(sensorData_s *pSensorData)
@@ -75,12 +108,75 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
     pSensorData->fuelPressure_pa = gpio_getFuelPressure();
     pSensorData->time_ms = millis();
+    gtime_ms = pSensorData->time_ms;
     return false;
+}
+
+static void frWheelInterrupt()
+{
+    frWheelCounter += 1;
+}
+static void flWheelInterrupt()
+{
+    frWheelCounter += 1;
+}
+static void rrWheelInterrupt()
+{
+    frWheelCounter += 1;
+}
+static void rlWheelInterrupt()
+{
+    frWheelCounter += 1;
+}
+
+static int32_t calcWheelRev(volatile int *wheelCount)
+{
+    // Get interval in seconds
+    float interval = (gtime_ms - previousWheelRecord) / 1000;
+    // Calculates revolutions per second
+    float rps = *wheelCount / WHEEL_COUNT_SIZE / interval;
+
+    // Converts m/us to MPH
+    float wheelSpeed = MS_TO_MPH(rps * wheelCircumference);
+    // Converts it to an integer
+    int32_t wheelSpeedInt = static_cast<int32_t>(roundf(wheelSpeed));
+    *wheelCount = 0;
+    if (wheelSpeedInt < 0) {
+        return static_cast<int32_t>(0);
+    } else {
+        return wheelSpeedInt;
+    }
 }
 
 static WheelSpeed_s gpio_getWheelSpeed()
 {
-    WheelSpeed_s wheelSpeed = {};
+    WheelSpeed_s wheelSpeed;
+    if ((gtime_ms-previousWheelRecord) >= WHEEL_SPEED_UPDATE_PERIOD) {
+        // Calculate rpm for each wheel
+        int32_t frRevs = calcWheelRev(&frWheelCounter);
+        int32_t flRevs = calcWheelRev(&flWheelCounter);
+        int32_t rrRevs = calcWheelRev(&rrWheelCounter);
+        int32_t rlRevs = calcWheelRev(&rlWheelCounter);
+
+        wheelSpeed = {
+            frRevs, // Front Right
+            flRevs, // Front Left
+            rrRevs, // Rear Right
+            rlRevs, // Rear Left
+        };
+        previousWheelSpeed.fr = wheelSpeed.fr;
+        previousWheelSpeed.fl = wheelSpeed.fl;
+        previousWheelSpeed.rr = wheelSpeed.rr;
+        previousWheelSpeed.rl = wheelSpeed.rl;
+        previousWheelRecord = gtime_ms;
+    } else {
+        wheelSpeed = {
+            previousWheelSpeed.fr,
+            previousWheelSpeed.fl,
+            previousWheelSpeed.rr,
+            previousWheelSpeed.rl,
+        };
+    }
     return wheelSpeed;
 }
 
