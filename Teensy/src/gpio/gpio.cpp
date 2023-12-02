@@ -111,7 +111,7 @@ static DamperPos_S gpio_getDamperPosition()
     the mm value for the potentiometer using the sensor value, make sure the max value 
     for the sensor is 1023 (when the potentiometer is fully closed) and not anything below.
     */ 
-    int32_t equation = [](int32_t x) {
+    auto equation = [](int32_t x) {
         int32_t value = round(-0.0597*x+90.192);
         return value;
     };
