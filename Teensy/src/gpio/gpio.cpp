@@ -104,6 +104,11 @@ static daq_EngineRev_t gpio_getEngineRevs()
 }
 
 int32_t damperEquation(int32_t x) {
+  /*
+  This equation will give you the value of the actual extension, if you want to the measurement
+  from the top bit of the potentiometer to the red line then you need to +29 onto the mm value you
+  get from this equation.
+  */
   int32_t value = round((-0.059*x+89.722)-28.94);
   return value;
 }
