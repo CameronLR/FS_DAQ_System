@@ -10,7 +10,7 @@
 
 #include <Arduino.h>
 #include "gpio.h"
-#include <cmath>
+#include <math.h>
 
 #define SIZE_OF_CIRCLE_ARRAY 10
 #define REV_SENSOR_PIN 23
@@ -103,18 +103,19 @@ static daq_EngineRev_t gpio_getEngineRevs()
     return rpm;
 }
 
+int32_t damperEquation(int32_t x) {
+  int32_t value = round((-0.059*x+89.722)-28.94);
+  return value;
+}
+
 static DamperPos_S gpio_getDamperPosition()
 {
     /*
     Read and convert sensor value potentiometer (which should be a value from 0 to 1023 
-    based on the voltage with 3.3v max) then use the lambda expression below to calculate
-    the mm value for the potentiometer using the sensor value, make sure the max value 
+    based on the voltage with 3.3v max) then use the damper equation calculate
+    the mm extension value for the potentiometer using the sensor value, make sure the max value 
     for the sensor is 1023 (when the potentiometer is fully closed) and not anything below.
     */ 
-    int32_t equation = [](int32_t x) {
-        int32_t value = round(-0.0597*x+90.192);
-        return value;
-    };
 
     int32_t damperPosFRvalue = analogRead(FR_DAMPER_SENSOR_PIN);
     int32_t damperPosFLvalue = analogRead(FL_DAMPER_SENSOR_PIN);
@@ -123,10 +124,10 @@ static DamperPos_S gpio_getDamperPosition()
 
     DamperPos_S damperPos = {};
 
-    damperPos.fr = equation(damperPosFRvalue);
-    damperPos.fl = equation(damperPosFLvalue);
-    damperPos.rr = equation(damperPosRRvalue);
-    damperPos.rl = equation(damperPosRLvalue);
+    damperPos.fr = damperEquation(damperPosFRvalue);
+    damperPos.fl = damperEquation(damperPosFLvalue);
+    damperPos.rr = damperEquation(damperPosRRvalue);
+    damperPos.rl = damperEquation(damperPosRLvalue);
 
     return damperPos;
 }
