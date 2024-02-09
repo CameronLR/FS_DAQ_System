@@ -53,7 +53,7 @@ bool tli_init()
 bool tli_sendData(sensorData_s *pSensorData)
 {
 
-    int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%d\n", 
+    int32_t txBufferSize = snprintf ( pTxBuffer, TX_BUFFER_SIZE, "%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%ld,%s,%f,%f,%f,%f,%f,%d\n", 
     pSensorData->wheelSpeed_mph.fr, 
     pSensorData->wheelSpeed_mph.rr, 
     pSensorData->wheelSpeed_mph.fl, 
@@ -72,6 +72,11 @@ bool tli_sendData(sensorData_s *pSensorData)
     pSensorData->throttlePos_mm, 
     pSensorData->fuelPressure_pa, 
     pSensorData->time_ms,
+    pSensorData->date_time,
+    pSensorData->latitude,
+    pSensorData->longitude,
+    pSensorData->speed,
+    pSensorData->heading
     checksum);
 
     //Send i whole 32 byte chunks using the usedBufferSpace too calc i (could be a while loop)
