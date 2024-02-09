@@ -27,8 +27,8 @@
 #define NEUTRAL_TIME_MS 250
 #define BUTTON_BOUNCE_THRESHOLD 150
 
-#define GPS_RX_PIN RX2
-#define GPS_TX_PIN TX2
+#define GPS_RX_PIN 7
+#define GPS_TX_PIN 8
 
 static WheelSpeed_s gpio_getWheelSpeed();
 static daq_EngineRev_t gpio_getEngineRevs();
