@@ -34,6 +34,27 @@ typedef struct GyroData_s
   int32_t z;
 } GyroData_s;
 
+typedef struct gpsDateTime_s
+{
+  uint8_t year;
+  uint8_t month;
+  uint8_t date;
+  uint8_t hour;
+  uint8_t minute;
+  uint8_t second;
+  uint16_t millisecond;
+} gpsDateTime_s;
+
+typedef struct gpsData_s
+{
+  float longitude;
+  float latitude;
+  float speed;
+  float altitude;
+  float angle;
+  gpsDateTime_s date_time;
+} gpsData_s;
+
 typedef struct sensorData_s
 {
   // the wheel speed in MPH
@@ -56,6 +77,17 @@ typedef struct sensorData_s
   daq_FuelPressure_t fuelPressure_pa;
   // program run time
   uint32_t time_ms;
+  // current time GMT
+  char date_time[25];
+  // lat long position
+  float latitude;
+  float longitude;
+  // current speed
+  float speed;
+  // current altitiude
+  float altitude;
+  // current heading
+  float heading;
 } sensorData_s;
 
 #endif
