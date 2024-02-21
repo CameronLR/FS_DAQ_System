@@ -39,6 +39,7 @@ static GyroData_s gpio_getGyro();
 static daq_BatteryV_t gpio_getVBat();
 static daq_ThrottlePos_t gpio_getThrottlePosition();
 static daq_FuelPressure_t gpio_getFuelPressure();
+static gpsData_s handleGpsUpdate();
 
 
 static void gpio_engineRevInterrupt();
@@ -57,8 +58,7 @@ volatile int gearUpBtnStartTime = 0;
 const int maxGear = 6;
 const int minGear = 0;
 
-SoftwareSerial gpsSerialPort(GPS_RX_PIN, GPS_TX_PIN);
-Adafruit_GPS GPS(&gpsSerialPort);
+Adafruit_GPS GPS(&Serial2);
 
 void gpio_init()
 {
@@ -73,27 +73,28 @@ void gpio_init()
     attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_UP_PIN),   gearUpShiftInterrupt, CHANGE);
     attachInterrupt(digitalPinToInterrupt(GEAR_SHIFT_DOWN_PIN),  gearDownShiftInterrupt , FALLING);
 
-    setSyncProvider(getTeensy3Time);
+    // GPS Initialisation
+    // setSyncProvider(getTeensy3Time);
 
     GPS.begin(9600);
     GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
     // Set the update rate
     GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
-
+    Serial.printf("Initalising GPS");
     // Wait for GPS fix to be aquired
-    int counter = 0
-    while (GPS.fixquality < 1) {
-        delay(500)
-        counter++;
-        if (counter >30){
-            break
-        }
-    }
+    int counter = 0;
+    // while (GPS.fixquality < 1) {
+    //     delay(500);
+    //     counter++;
+    //     if (counter > 30){
+    //         break;
+    //     }
+    // }
 }
 
-char* formatTimeString(gpsDateTime_s time_struct) {
-    char datetimeString[24];
-    sprintf(dateTimeString, "%04d-%02d-$02dT%02d:%02d:%02d.%03dZ", 
+char *formatTimeString(gpsDateTime_s time_struct) {
+    char *dateTimeString = new char[25];
+    sprintf(dateTimeString, "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ", 
         time_struct.year,
         time_struct.month, 
         time_struct.date,
@@ -101,14 +102,14 @@ char* formatTimeString(gpsDateTime_s time_struct) {
         time_struct.minute,
         time_struct.second,
         time_struct.millisecond);
-    return datetimeString;
+    return dateTimeString;
 }
 
 bool updateSensorInfo(sensorData_s *pSensorData)
 {
     gpsData_s tempGpsData = handleGpsUpdate();
     setTime(tempGpsData.date_time.hour,tempGpsData.date_time.minute,tempGpsData.date_time.second,
-        tempGpsData.date_time.date, tempGpsData.date_time.month, tempGpsData.date_time.year)
+        tempGpsData.date_time.date, tempGpsData.date_time.month, tempGpsData.date_time.year);
     
     pSensorData->wheelSpeed_mph = gpio_getWheelSpeed();
     pSensorData->engineRev_rpm = gpio_getEngineRevs();
@@ -120,7 +121,7 @@ bool updateSensorInfo(sensorData_s *pSensorData)
     pSensorData->throttlePos_mm = gpio_getThrottlePosition();
     pSensorData->fuelPressure_pa = gpio_getFuelPressure();
     pSensorData->time_ms = millis();
-    pSensorData->date_time = formatTimeString(tempGpsData.date_time);
+    // pSensorData->date_time = &(formatTimeString(tempGpsData.date_time));
     pSensorData->latitude = tempGpsData.latitude;
     pSensorData->longitude = tempGpsData.longitude;
     pSensorData->speed = tempGpsData.speed;
@@ -258,8 +259,9 @@ static gpsData_s handleGpsUpdate()
 {
     // if a sentence is received, we can check the checksum, parse it...
     if (GPS.newNMEAreceived()) {
-        if (!GPS.parse(GPS.lastNMEA()))   // this also sets the newNMEAreceived() flag to false
-        return;  // we can fail to parse a sentence in which case we should just wait for another
+        if (!GPS.parse(GPS.lastNMEA())) {
+            // return empty one
+        }; // we can fail to parse a sentence in which case we should just wait for another
     }
     gpsData_s latest_gps = {
         .longitude = GPS.longitude,
@@ -267,14 +269,14 @@ static gpsData_s handleGpsUpdate()
         .speed = GPS.speed,
         .altitude = GPS.altitude,
         .angle = GPS.angle,
-        .gpsDateTime = gpsDateTime_s {
+        .date_time = gpsDateTime_s {
             .year = GPS.year,
             .month = GPS.month,
             .date = GPS.day,
             .hour = GPS.hour,
             .minute = GPS.minute,
-            .second = GPS.second
-            .millisecond = GPS.millisecond
+            .second = GPS.seconds,
+            .millisecond = GPS.milliseconds
         }
     };
     return latest_gps;

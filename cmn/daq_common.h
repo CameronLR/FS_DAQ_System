@@ -78,7 +78,7 @@ typedef struct sensorData_s
   // program run time
   uint32_t time_ms;
   // current time GMT
-  char[24] date_time;
+  char date_time[25];
   // lat long position
   float latitude;
   float longitude;
